@@ -1,1 +1,7 @@
 testing
+
+venv
+
+__pycache__
+
+gtfs_csv
