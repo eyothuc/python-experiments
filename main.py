@@ -21,14 +21,14 @@ def get_stop_info(id):
     return jsonify(stop_info)
 
 
-@app.route('/api/vehicletrips/<vehicle_ids>', methods=['GET'])
-def get_vehicle_info(vehicli_ids):
-    vehicle_info = gtfs_handlers.get_vehicle_realtime_info(vehicli_ids)
+@app.route('/api/vehicle/<vehicle_ids>', methods=['GET'])
+def get_vehicle_info(vehicle_ids):
+    vehicle_info = gtfs_handlers.get_vehicle_realtime_info(vehicle_ids)
     gtfs_handlers.get_position_realtime_info()
     return jsonify(vehicle_info)
 
 
-@app.route('/api/vehicles')
+@app.route('/api/vehicles', methods=['GET'])
 def get_vehicle_info2():
     bbox = request.args.get('bbox', None)
     transports = request.args.get('transports', None)

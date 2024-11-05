@@ -72,7 +72,7 @@ def get_stop_forecast_realtime_info(stop_id):
         stop_time_update = trip_update.stop_time_update[0]
         if stop_time_update.arrival.time:
             time = int(stop_time_update.arrival.time)
-            stop_info[-1]['arrival_string'] = \
+            stop_info[-1]['arrival'] = \
                 strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
 
     return stop_info
@@ -94,7 +94,7 @@ def get_vehicle_forecast_realtime_info(vehicle_ids):
                 vehicle_info[id].append(dict())
                 vehicle_info[id][-1]['stop_id'] = int(row.stop_id)
                 time = row.arrival.time
-                vehicle_info[id][-1]['arrival_string'] = \
+                vehicle_info[id][-1]['arrival'] = \
                     strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
 
     return vehicle_info
