@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import dynamic from "next/dynamic";
 import { TbBusStop } from "react-icons/tb";
 import "leaflet/dist/leaflet.css";
 import L, { LatLngTuple } from "leaflet";
 import ReactDOMServer from "react-dom/server";
 import axios from "axios";
-import MarkerClusterGroup from "react-leaflet-cluster"; // Импортируем MarkerClusterGroup
 import "react-leaflet-markercluster/dist/styles.min.css"; // Импорт стилей кластера
 
 interface Stop {
@@ -15,6 +14,28 @@ interface Stop {
   la: number;
   lon: number;
 }
+
+// Динамический импорт компонентов react-leaflet
+const MapContainerDynamic = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayerDynamic = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const MarkerDynamic = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const PopupDynamic = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Popup),
+  { ssr: false }
+);
+const MarkerClusterGroupDynamic = dynamic(
+  () => import("react-leaflet-cluster").then((mod) => mod.default),
+  { ssr: false }
+);
 
 const MapComponent: React.FC = () => {
   const [locations, setLocations] = useState<
@@ -58,17 +79,17 @@ const MapComponent: React.FC = () => {
   }
 
   return (
-    <MapContainer
+    <MapContainerDynamic
       center={[59.938784, 30.314997]} // Центр карты
       zoom={13}
       style={{ height: "100vh", width: "100%" }}
     >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayerDynamic url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       {/* Исправляем типизацию для MarkerClusterGroup */}
-      <MarkerClusterGroup>
+      <MarkerClusterGroupDynamic>
         {locations.map((location, index) => (
-          <Marker
+          <MarkerDynamic
             key={index}
             position={location.position}
             icon={customIcon}
@@ -76,11 +97,11 @@ const MapComponent: React.FC = () => {
               click: () => handleMarkerClick(location.text),
             }}
           >
-            <Popup>{location.text}</Popup>
-          </Marker>
+            <PopupDynamic>{location.text}</PopupDynamic>
+          </MarkerDynamic>
         ))}
-      </MarkerClusterGroup>
-    </MapContainer>
+      </MarkerClusterGroupDynamic>
+    </MapContainerDynamic>
   );
 };
 
