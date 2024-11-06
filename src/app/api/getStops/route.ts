@@ -10,7 +10,7 @@ export async function GET() {
 
     // Возвращаем полученные данные как JSON
     return NextResponse.json(response.data);
-  } catch () {
+  } catch {
     // Обрабатываем ошибки и возвращаем ошибочный статус
     return NextResponse.json(
       { message: "Ошибка при получении данных" },
