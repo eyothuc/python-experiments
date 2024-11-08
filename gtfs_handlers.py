@@ -31,18 +31,18 @@ def download_feed():
 
 
 # Probably will be replaced with queries to DataBase, when it will be created.
-def parse_feed(file_name, ignore_prefix, collect_data):
-    response = []
+def parse_csv_file(file_name, ignore_prefix, collect_data):
+    returnData = []
     with open(f'{FEED_DIR}/{file_name}', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
 
         headers = dict(
-            (ind, elem.lstrip(ignore_prefix))
+            (ind, elem.removeprefix(ignore_prefix))
             for ind, elem in enumerate(next(reader))
-            if elem in collect_data)
+            if elem in collect_data or collect_data == 'all')
 
         for row in reader:
-            response.append(dict())
+            returnData.append(dict())
             for ind, data in enumerate(row):
                 if not (ind in headers):
                     continue
@@ -50,9 +50,9 @@ def parse_feed(file_name, ignore_prefix, collect_data):
                     data = int(data)
                 elif isfloat(data):
                     data = float(data)
-                response[-1][headers[ind]] = data
+                returnData[-1][headers[ind]] = data
 
-    return response
+    return returnData
 
 
 def get_stop_forecast_realtime_info(stop_id):
@@ -65,15 +65,12 @@ def get_stop_forecast_realtime_info(stop_id):
     for entity in feed.entity:
         stop_info.append(dict())
         trip_update = entity.trip_update
-        if trip_update.trip.route_id:
-            stop_info[-1]['route_id'] = int(entity.trip_update.trip.route_id)
-        if trip_update.vehicle.id:
-            stop_info[-1]['vehicle_id'] = int(entity.trip_update.vehicle.id)
+        stop_info[-1]['route_id'] = int(entity.trip_update.trip.route_id)
+        stop_info[-1]['vehicle_id'] = int(entity.trip_update.vehicle.id)
         stop_time_update = trip_update.stop_time_update[0]
-        if stop_time_update.arrival.time:
-            time = int(stop_time_update.arrival.time)
-            stop_info[-1]['arrival'] = \
-                strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
+        time = int(stop_time_update.arrival.time)
+        stop_info[-1]['arrival'] = \
+            strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
 
     return stop_info
 
@@ -89,13 +86,12 @@ def get_vehicle_forecast_realtime_info(vehicle_ids):
         id = entity.id
         vehicle_info[id] = list()
         trip_update = entity.trip_update
-        if trip_update.stop_time_update:
-            for row in trip_update.stop_time_update:
-                vehicle_info[id].append(dict())
-                vehicle_info[id][-1]['stop_id'] = int(row.stop_id)
-                time = row.arrival.time
-                vehicle_info[id][-1]['arrival'] = \
-                    strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
+        for row in trip_update.stop_time_update:
+            vehicle_info[id].append(dict())
+            vehicle_info[id][-1]['stop_id'] = int(row.stop_id)
+            time = row.arrival.time
+            vehicle_info[id][-1]['arrival'] = \
+                strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
 
     return vehicle_info
 
@@ -119,13 +115,12 @@ def get_vehicle_position_realtime_info(bbox, transports, routeIDs):
         vehicle_position.append(dict())
 
         vehicle_position[-1]['vehicle_id'] = int(entity.id)
-        if entity.vehicle:
-            vehicle = entity.vehicle
-            vehicle_position[-1]['route_id'] = int(vehicle.trip.route_id)
-            position = vehicle.position
-            vehicle_position[-1]['lat'] = float(position.latitude)
-            vehicle_position[-1]['lon'] = float(position.longitude)
-            vehicle_position[-1]['bearing'] = int(position.bearing)
+        vehicle = entity.vehicle
+        vehicle_position[-1]['route_id'] = int(vehicle.trip.route_id)
+        position = vehicle.position
+        vehicle_position[-1]['lat'] = float(position.latitude)
+        vehicle_position[-1]['lon'] = float(position.longitude)
+        vehicle_position[-1]['bearing'] = int(position.bearing)
 
     return vehicle_position
 
