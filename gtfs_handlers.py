@@ -1,10 +1,10 @@
-from google.transit import gtfs_realtime_pb2
-from zipfile import ZipFile
+import os.path
 from io import BytesIO
 from time import strftime, localtime
+from zipfile import ZipFile
 
 import requests
-import os.path
+from google.transit import gtfs_realtime_pb2
 
 FEED_DIR = './gtfs_csv'
 GTFS_URL = 'https://transport.orgp.spb.ru/Portal/transport/internalapi/gtfs'

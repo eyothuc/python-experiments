@@ -1,9 +1,10 @@
-# from sqlalchemy.orm import relationship
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import DeclarativeBase
-# from sqlalchemy import ForeignKey
+from typing import Optional
+
+from flask_login import UserMixin
 from sqlalchemy import String
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 
 
 class Base(DeclarativeBase):
@@ -42,3 +43,14 @@ class Route(Base):
     circular: Mapped[int]
     urban: Mapped[int]
     night: Mapped[int]
+
+
+class User(Base, UserMixin):
+    __tablename__ = "users"
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String(100))
+    username: Mapped[str] = mapped_column(String(100))
+    password: Mapped[str] = mapped_column(String(500))
+
+    def get_id(self):
+        return str(self.user_id)
