@@ -4,7 +4,6 @@ from io import BytesIO
 from time import strftime, localtime
 
 import requests
-import csv
 import os.path
 
 FEED_DIR = './gtfs_csv'
@@ -28,31 +27,6 @@ def download_feed():
     if response.status_code == 200:
         with ZipFile(BytesIO(response.content)) as zip_file:
             zip_file.extractall(path='./gtfs_csv')
-
-
-# Probably will be replaced with queries to DataBase, when it will be created.
-def parse_csv_file(file_name, ignore_prefix, collect_data):
-    returnData = []
-    with open(f'{FEED_DIR}/{file_name}', newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
-
-        headers = dict(
-            (ind, elem.removeprefix(ignore_prefix))
-            for ind, elem in enumerate(next(reader))
-            if elem in collect_data or collect_data == 'all')
-
-        for row in reader:
-            returnData.append(dict())
-            for ind, data in enumerate(row):
-                if not (ind in headers):
-                    continue
-                if data.isdigit():
-                    data = int(data)
-                elif isfloat(data):
-                    data = float(data)
-                returnData[-1][headers[ind]] = data
-
-    return returnData
 
 
 def get_stop_forecast_realtime_info(stop_id):
