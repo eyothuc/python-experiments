@@ -11,7 +11,7 @@ import "react-leaflet-markercluster/dist/styles.min.css"; // Импорт сти
 interface Stop {
   id: number;
   name: string;
-  la: number;
+  lat: number;
   lon: number;
 }
 
@@ -50,7 +50,7 @@ const MapComponent: React.FC = () => {
         const stops: Stop[] = response.data;
 
         const newLocations = stops.map((stop) => ({
-          position: [stop.la, stop.lon] as LatLngTuple,
+          position: [stop.lat, stop.lon] as LatLngTuple,
           text: stop.name,
         }));
         setLocations(newLocations);
