@@ -1,9 +1,61 @@
 from flask import Flask, jsonify, request
-import gtfs_handlers
+from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
+
 import database
+import gtfs_handlers
 import tables
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SECRET_KEY'] = 'your_key'
+app.config['SESSION_PERMANENT'] = False
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return database.get_user_by_id(user_id)
+
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    if database.get_user_by_username(username):
+        return jsonify({"message": "Пользователь c таким логином уже существует"}), 401
+    if not username or not password:
+        return jsonify({"message": "Поля username и password должны быть заполнены"}), 401
+    password_hash = generate_password_hash(password)
+    database.create_user(username, password_hash)
+    return jsonify({"message": "Регистрация прошла успешно"}), 201
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    is_remember = data.get('is_remember', False)
+
+    if user := database.get_user_by_username(username):
+        if not check_password_hash(user.password, password):
+            return jsonify({"message": "Неверные данные"}), 401
+        login_user(user, remember=is_remember)
+        return jsonify({"message": "Успешный вход"}), 200
+    return jsonify({"message": "Пользователь не найден"}), 401
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    logout_user()
+    return jsonify({'message': 'Выход успешен'}), 200
 
 
 @app.route('/api/stops', methods=['GET'])
@@ -64,5 +116,5 @@ def update_db():
     return jsonify("Updating")
 
 
-if (__name__ == '__main__'):
+if __name__ == '__main__':
     app.run(debug=True)
