@@ -6,7 +6,7 @@ from zipfile import ZipFile
 import requests
 from google.transit import gtfs_realtime_pb2
 
-FEED_DIR = './gtfs_csv'
+FEED_DIR = '../gtfs_csv'
 GTFS_URL = 'https://transport.orgp.spb.ru/Portal/transport/internalapi/gtfs'
 
 
@@ -19,14 +19,14 @@ def isfloat(string):
 
 
 def download_feed():
-    if (not os.path.exists(FEED_DIR)):
+    if not os.path.exists(FEED_DIR):
         os.makedirs(FEED_DIR)
 
     feed_url = f'{GTFS_URL}/feed.zip'
     response = requests.get(feed_url, verify=False)
     if response.status_code == 200:
         with ZipFile(BytesIO(response.content)) as zip_file:
-            zip_file.extractall(path='./gtfs_csv')
+            zip_file.extractall(path=FEED_DIR)
 
 
 def get_stop_forecast_realtime_info(stop_id):
