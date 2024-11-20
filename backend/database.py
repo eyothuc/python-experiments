@@ -6,7 +6,7 @@ import gtfs_handlers
 import tables
 from gtfs_handlers import download_feed
 
-ENGINE = create_engine('postgresql://postgres:q1w2@localhost:5432', echo=True)
+ENGINE = create_engine('postgresql://postgres:q1w2@maps-postgres:5432', echo=True)
 
 
 def create_db():
