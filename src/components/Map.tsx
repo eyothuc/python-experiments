@@ -6,6 +6,7 @@ import L, { LatLngTuple } from "leaflet";
 import ReactDOMServer from "react-dom/server";
 import Modal from "react-modal"; // React Modal
 import axios from "axios";
+import dynamic from "next/dynamic";
 import "react-leaflet-markercluster/dist/styles.min.css";
 import {
   MapContainer,
