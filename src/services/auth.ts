@@ -1,20 +1,26 @@
+import axios from "axios";
+
 const API_URL = "/api"; // Замените на ваш URL backend
 
 // Регистрация пользователя
 export const registerUser = async (username: string, password: string) => {
-  const response = await fetch(`${API_URL}/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await axios.post(
+    `${API_URL}/register`,
+    {
+      username,
+      password,
     },
-    body: JSON.stringify({ username, password }),
-  });
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Ошибка регистрации");
+  if (response.status !== 200) {
+    throw new Error(response.data.message || "Ошибка регистрации");
   }
-  return data.message;
+  return response.data.message;
 };
 
 // Вход пользователя
@@ -23,17 +29,22 @@ export const loginUser = async (
   password: string,
   isRemember: boolean
 ) => {
-  const response = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await axios.post(
+    `${API_URL}/login`,
+    {
+      username,
+      password,
+      is_remember: isRemember,
     },
-    body: JSON.stringify({ username, password, is_remember: isRemember }),
-  });
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Ошибка входа");
+  if (response.status !== 200) {
+    throw new Error(response.data.message || "Ошибка входа");
   }
-  return data.message;
+  return response;
 };

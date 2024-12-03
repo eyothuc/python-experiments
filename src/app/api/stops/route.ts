@@ -6,7 +6,9 @@ import axios from "axios";
 export async function GET() {
   try {
     // Делаем запрос на внешнее API
-    const response = await axios.get("https://trashapigtfs.loca.lt/api/stops");
+    const response = await axios.get("https://trashapigtfs.loca.lt/api/stops", {
+      withCredentials: true,
+    });
 
     // Возвращаем полученные данные как JSON
     return NextResponse.json(response.data);
