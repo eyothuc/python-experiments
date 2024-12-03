@@ -6,7 +6,8 @@ import L, { LatLngTuple } from "leaflet";
 import ReactDOMServer from "react-dom/server";
 import Modal from "react-modal"; // React Modal
 import axios from "axios";
-import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+
 import "react-leaflet-markercluster/dist/styles.min.css";
 import {
   MapContainer,
@@ -48,6 +49,32 @@ const MapComponent: React.FC = () => {
   const [stopLists, setStopLists] = useState<Record<number, number[]>>({});
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<number | null>(null);
+  const [isAddListModalOpen, setAddListModalOpen] = useState(false); // Состояние для нового модального окна
+  const [newListName, setNewListName] = useState(""); // Название нового списка
+  const router = useRouter();
+
+  // Функция для получения куки из localStorage
+  const getAuthCookies = () => {
+    const cookies = document.cookie;
+    const cookieArray = cookies.split(";").map((cookie) => cookie.trim());
+    const cookieObject: { [key: string]: string } = {};
+
+    cookieArray.forEach((cookie) => {
+      const [name, value] = cookie.split("=");
+      cookieObject[name] = value;
+    });
+
+    return cookieObject;
+  };
+
+  // const createAxiosInstance = () => {
+  //   const instance = axios.create({
+  //     withCredentials: true, // Включаем отправку куки
+  //   });
+  //   return instance;
+  // };
+
+  // const axiosInstance = createAxiosInstance();
 
   // Обновление видимых остановок при перемещении карты
   const MapEventHandler: React.FC = () => {
@@ -148,6 +175,29 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  // Добавление нового списка
+  const handleAddNewList = () => {
+    const addList = async (name: string) => {
+      try {
+        const response = await axios.post(`/api/lists`, { name });
+        const newListId = response.data.id; // Предполагаем, что сервер возвращает ID нового списка
+        setCheckedLists((prev) => [...prev, newListId]);
+        alert("Список успешно создан!");
+      } catch (error) {
+        console.error("Ошибка при создании списка:", error);
+        alert("Ошибка при создании списка. Пожалуйста, попробуйте снова.");
+      }
+    };
+
+    if (newListName.trim()) {
+      addList(newListName);
+      setNewListName(""); // Сбрасываем ввод
+      setAddListModalOpen(false); // Закрываем модальное окно
+    } else {
+      alert("Пожалуйста, введите название списка.");
+    }
+  };
+
   return (
     <div className="relative h-screen w-screen">
       {loading && (
@@ -240,6 +290,29 @@ const MapComponent: React.FC = () => {
         </button>
       </Modal>
 
+      <Modal
+        isOpen={isAddListModalOpen}
+        onRequestClose={() => setAddListModalOpen(false)}
+        contentLabel="Add New List"
+        className="modal bg-white rounded-lg shadow-lg p-5 max-w-md mx-auto z-[1001]"
+        overlayClassName="overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[1001]"
+      >
+        <h2 className="text-lg font-bold mb-4">Добавить новый список</h2>
+        <input
+          type="text"
+          value={newListName}
+          onChange={(e) => setNewListName(e.target.value)}
+          placeholder="Введите название списка"
+          className="border rounded-md w-full p-2 mb-4"
+        />
+        <button
+          onClick={handleAddNewList}
+          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+        >
+          Добавить
+        </button>
+      </Modal>
+
       <MapContainer
         center={[59.938784, 30.314997]}
         zoom={13}
@@ -279,6 +352,12 @@ const MapComponent: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                    <button
+                      onClick={() => setAddListModalOpen(true)}
+                      className="mt-2 bg-green-500 text-white py-1 px-3 rounded-lg hover:bg-green-600 w-full z-[1000]"
+                    >
+                      Создать новый список
+                    </button>
                     <button
                       className="mt-2 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 w-full"
                       onClick={() => addToList(location.id)} // Кнопка добавления в список
