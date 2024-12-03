@@ -155,6 +155,12 @@ const MapComponent: React.FC = () => {
     fetchTransport();
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser"); // Remove the user from localStorage
+    setCurrentUser(null); // Update the state to reflect the logout
+    router.push("/login"); // Redirect to the login page
+  };
+
   const addToList = (stopId: number) => {
     if (selectedList !== null) {
       setStopLists((prev) => ({
@@ -196,15 +202,41 @@ const MapComponent: React.FC = () => {
       )}
 
       {/* Отображение имени текущего пользователя */}
-      {currentUser && (
+      {currentUser ? (
         <div className="absolute top-5 left-20 bg-white p-2 shadow-md rounded-lg z-[1000]">
-          <p className="text-sm font-semibold">Пользователь: {currentUser}</p>
+          <div className="flex gap-4">
+            <p className="text-sm font-semibold">Пользователь: {currentUser}</p>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-black border-black border p-1"
+            >
+              Выйти
+            </button>
+          </div>
           <button
             onClick={() => setModalIsOpen(true)}
-            className="mt-2 bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600"
+            className="mt-2 bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600 w-full"
           >
             Открыть профиль
           </button>
+        </div>
+      ) : (
+        <div className="absolute top-5 left-20 bg-white p-2 shadow-md rounded-lg z-[1000]">
+          <p className="text-sm font-semibold">Вы не авторизованы</p>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => router.push("/login")}
+              className="bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600"
+            >
+              Вход
+            </button>
+            <button
+              onClick={() => router.push("/register")}
+              className="bg-green-500 text-white py-1 px-3 rounded-lg hover:bg-green-600"
+            >
+              Регистрация
+            </button>
+          </div>
         </div>
       )}
 
