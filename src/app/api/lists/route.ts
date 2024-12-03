@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
       {
         headers: {
-          "Set-Cookie": cookies,
+          Cookie: cookies,
         },
         withCredentials: true, // Включаем отправку куков
       }
