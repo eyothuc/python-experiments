@@ -94,27 +94,33 @@ const MapComponent: React.FC = () => {
     return hours > 0 ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
   }
 
-  // Получение остановок
   useEffect(() => {
     // Получаем текущего пользователя из localStorage
     setCurrentUser(localStorage.getItem("currentUser"));
+
     const fetchStops = async () => {
+      setLoading(true); // Устанавливаем загрузку перед запросом
       try {
         const response = await axios.get(`/api/stops`, {
           withCredentials: true,
         });
-        const stops: Stop[] = response.data;
 
-        const newLocations = stops.map((stop) => ({
-          id: stop.id,
-          position: [stop.lat, stop.lon] as LatLngTuple,
-          text: stop.name,
-        }));
-        setLocations(newLocations);
+        if (response.status === 200) {
+          // Проверяем статус ответа
+          const stops: Stop[] = response.data;
+
+          const newLocations = stops.map((stop) => ({
+            id: stop.id,
+            position: [stop.lat, stop.lon] as LatLngTuple,
+            text: stop.name,
+          }));
+          setLocations(newLocations);
+          setLoading(false);
+        } else {
+          console.error(`Ошибка: код ответа ${response.status}`);
+        }
       } catch (error) {
         console.error("Ошибка при получении остановок:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
