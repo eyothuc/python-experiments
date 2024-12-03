@@ -20,9 +20,6 @@ export async function POST(request: Request) {
       "https://trashapigtfs.loca.lt/api/lists",
       { name },
       {
-        headers: {
-          Cookie: cookies, // Передача куков
-        },
         withCredentials: true, // Включаем отправку куков
       }
     );
