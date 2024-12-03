@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { name } = await request.json();
 
     // Извлекаем куки из запроса
-    const cookies = request.headers.get("cookie");
+    const cookies = request.headers.get("Cookie");
 
     if (!cookies) {
       return NextResponse.json(
