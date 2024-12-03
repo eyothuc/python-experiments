@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { loginUser } from "@/services/auth";
+import axios from "axios";
 import { useRouter } from "next/navigation";
+import { loginUser } from "@/services/auth";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -13,14 +14,22 @@ const LoginPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const result = await loginUser(username, password, isRemember);
-      localStorage.setItem("currentUser", username); // Сохраняем пользователя
-      setMessage(result);
-      router.push("/"); // Переход на страницу с картой
-    } catch (error: any) {
-      setMessage(error.message);
+
+    const response = await loginUser(username, password, isRemember);
+
+    // Сохраняем пользователя и куки
+    localStorage.setItem("currentUser", username);
+
+    const cookies = response.headers;
+
+    if (cookies) {
+      cookies.forEach((cookie: any) => {
+        document.cookie = cookie;
+      });
     }
+
+    setMessage("Успешный вход");
+    router.push("/"); // Переход на страницу с картой
   };
 
   return (
