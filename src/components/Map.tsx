@@ -32,6 +32,7 @@ interface Transport {
 }
 
 Modal.setAppElement(document.body);
+axios.defaults.withCredentials = true;
 
 const MapComponent: React.FC = () => {
   const [locations, setLocations] = useState<
@@ -52,20 +53,6 @@ const MapComponent: React.FC = () => {
   const [isAddListModalOpen, setAddListModalOpen] = useState(false); // Состояние для нового модального окна
   const [newListName, setNewListName] = useState(""); // Название нового списка
   const router = useRouter();
-
-  // Функция для получения куки из localStorage
-  const getAuthCookies = () => {
-    const cookies = document.cookie;
-    const cookieArray = cookies.split(";").map((cookie) => cookie.trim());
-    const cookieObject: { [key: string]: string } = {};
-
-    cookieArray.forEach((cookie) => {
-      const [name, value] = cookie.split("=");
-      cookieObject[name] = value;
-    });
-
-    return cookieObject;
-  };
 
   // const createAxiosInstance = () => {
   //   const instance = axios.create({
@@ -113,7 +100,9 @@ const MapComponent: React.FC = () => {
     setCurrentUser(localStorage.getItem("currentUser"));
     const fetchStops = async () => {
       try {
-        const response = await axios.get(`/api/stops`);
+        const response = await axios.get(`/api/stops`, {
+          withCredentials: true,
+        });
         const stops: Stop[] = response.data;
 
         const newLocations = stops.map((stop) => ({

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     // Сохраняем куки в localStorage
     const cookies = response.headers["set-cookie"];
-    console.log(cookies);
+
     if (cookies) {
       return NextResponse.json(
         { message: "Успешный вход", cookies },

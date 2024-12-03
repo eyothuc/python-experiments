@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth";
+import Cookies from "js-cookie";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -17,19 +17,31 @@ const LoginPage = () => {
 
     const response = await loginUser(username, password, isRemember);
 
-    // Сохраняем пользователя и куки
+    // Сохраняем пользователя в localStorage
     localStorage.setItem("currentUser", username);
 
-    const cookies = response.headers;
+    // Извлечение куков из ответа
+    const cookies = response.data.cookies;
 
-    if (cookies) {
-      cookies.forEach((cookie: any) => {
-        document.cookie = cookie;
-      });
+    if (cookies && Array.isArray(cookies)) {
+      try {
+        // Установка каждого куки
+        cookies.forEach((cookie: string) => {
+          const [name, value] = cookie.split("=");
+          Cookies.set(name.trim(), value.trim(), {
+            path: "/",
+            expires: isRemember ? 7 : undefined, // Срок действия 7 дней, если выбрано "Запомнить меня"
+          });
+        });
+        setMessage("Успешный вход");
+        router.push("/"); // Переход на страницу с картой
+      } catch (error) {
+        setMessage("Ошибка сохранения куков.");
+        console.error("Ошибка:", error);
+      }
+    } else {
+      setMessage("Не удалось сохранить куки. Проверьте сервер.");
     }
-
-    setMessage("Успешный вход");
-    router.push("/"); // Переход на страницу с картой
   };
 
   return (
