@@ -22,7 +22,20 @@ export async function POST(request: Request) {
         password,
         is_remember,
       }
+      // {
+      //   withCredentials: true, // Включаем отправку куки
+      // }
     );
+
+    // Сохраняем куки в localStorage
+    const cookies = response.headers["set-cookie"];
+    console.log(cookies);
+    if (cookies) {
+      return NextResponse.json(
+        { message: "Успешный вход", cookies },
+        { status: 200 }
+      );
+    }
 
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: any) {
