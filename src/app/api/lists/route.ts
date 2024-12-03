@@ -19,7 +19,11 @@ export async function POST(request: Request) {
     const response = await axios.post(
       "https://trashapigtfs.loca.lt/api/lists",
       { name },
+
       {
+        headers: {
+          "Set-Cookie": cookies,
+        },
         withCredentials: true, // Включаем отправку куков
       }
     );
