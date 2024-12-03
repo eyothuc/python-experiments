@@ -94,19 +94,17 @@ const MapComponent: React.FC = () => {
     return hours > 0 ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
   }
 
-  useEffect(() => {
-    // Получаем текущего пользователя из localStorage
-    setCurrentUser(localStorage.getItem("currentUser"));
+  const fetchStops = async (retryCount = 3, delay = 2000) => {
+    let attempts = 0; // Счётчик попыток
+    let success = false;
 
-    const fetchStops = async () => {
-      setLoading(true); // Устанавливаем загрузку перед запросом
+    while (attempts < retryCount && !success) {
       try {
         const response = await axios.get(`/api/stops`, {
           withCredentials: true,
         });
 
         if (response.status === 200) {
-          // Проверяем статус ответа
           const stops: Stop[] = response.data;
 
           const newLocations = stops.map((stop) => ({
@@ -115,16 +113,37 @@ const MapComponent: React.FC = () => {
             text: stop.name,
           }));
           setLocations(newLocations);
-          setLoading(false);
+          success = true; // Запрос выполнен успешно
         } else {
-          console.error(`Ошибка: код ответа ${response.status}`);
+          console.error(
+            `Попытка ${attempts + 1}: код ответа ${response.status}`
+          );
         }
       } catch (error) {
-        console.error("Ошибка при получении остановок:", error);
+        console.error(`Попытка ${attempts + 1}: ошибка запроса`, error);
       }
-    };
 
-    fetchStops();
+      if (!success) {
+        attempts++;
+        if (attempts < retryCount) {
+          console.log(`Повторная попытка через ${delay / 1000} секунд...`);
+          await new Promise((res) => setTimeout(res, delay)); // Задержка перед повтором
+        }
+      }
+    }
+
+    if (!success) {
+      console.error("Ошибка: данные остановок не удалось загрузить.");
+    } else {
+      setLoading(false); // Успешно завершённый запрос отключает загрузку
+    }
+  };
+
+  // Вызов в useEffect
+  useEffect(() => {
+    setCurrentUser(localStorage.getItem("currentUser"));
+    setLoading(true); // Показываем загрузку перед выполнением запросов
+    fetchStops(); // Запуск функции с повторными попытками
   }, []);
 
   // Создание кастомной иконки
