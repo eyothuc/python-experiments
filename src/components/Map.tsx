@@ -179,19 +179,25 @@ const MapComponent: React.FC = () => {
 
   const addStopToList = async (listId: number, stopId: number) => {
     if (!currentUser) return;
-    try {
-      const response = await axios.post(`/api/lists/${listId}`, {
-        username: currentUser,
-        stopId,
-      });
-      alert("Остановка успешно добавлена в список!");
-      if (currentUser) fetchUserLists(currentUser);
-    } catch (error) {
-      console.error("Ошибка при добавлении остановки в список:", error);
-      alert(
-        "Ошибка при добавлении остановки в список. Пожалуйста, попробуйте снова."
-      );
-    }
+    let tries = 0;
+    const newInterval = setInterval(async () => {
+      try {
+        const response = await axios.post(`/api/lists/${listId}`, {
+          username: currentUser,
+          stopId,
+        });
+        alert("Остановка успешно добавлена в список!");
+        if (currentUser) fetchUserLists(currentUser);
+      } catch (error) {
+        tries++;
+
+        console.error("Ошибка при добавлении остановки в список:", error);
+      } finally {
+        if (tries >= 10) {
+          clearInterval(newInterval);
+        }
+      }
+    }, 2000);
   };
 
   // Вызов в useEffect
@@ -199,7 +205,14 @@ const MapComponent: React.FC = () => {
     const username = localStorage.getItem("currentUser");
     console.log(username);
     setCurrentUser(localStorage.getItem("currentUser"));
-    if (username) fetchUserLists(username);
+
+    if (username) {
+      fetchUserLists(username);
+      setInterval(() => {
+        fetchUserLists(username);
+      }, 60000);
+    }
+
     setLoading(true); // Показываем загрузку перед выполнением запросов
     fetchStops(); // Запуск функции с повторными попытками
   }, []);
