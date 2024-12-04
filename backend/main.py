@@ -193,7 +193,7 @@ def remove_stop_from_list(list_id):
 @app.route('/api/lists/<list_id>', methods=['GET'])
 @login_required
 def get_list_by_id(list_id):
-    return jsonify(database.get_list_by_id(int(list_id)).to_dict())
+    return jsonify(database.get_list_by_id([int(list_id)]).to_dict())
 
 
 @app.route('/api/lists/user/<username>', methods=['GET'])
@@ -229,6 +229,34 @@ def add_list_to_user_by_username(username):
 
     new_list = database.add_list(name, stops, user.user_id)
     return jsonify(new_list.to_dict()), 201
+
+
+@app.route('/api/lists/user/<username>/closest', methods=['GET'])
+def get_closest_stop(username):
+    user = database.get_user_by_username(username)
+    if not user:
+        return jsonify({"message": "Пользователь не найден"}), 404
+
+    data = request.json
+    lists = list(map(int, data.get('listIds', [])))
+    coord_x, coord_y = list(map(int, data.get('coords', [])))
+
+    stops = []
+    for lst in database.get_list_by_id(lists):
+        stops.extend(lst.stops)
+
+    min_dist = float("inf")
+    min_stop_id = None
+
+    for stop in stops:
+        st_x, st_y = stop.lat, stop.lon
+        dist = (coord_x - st_x) ** 2 + (coord_y - st_y) ** 2
+        if min_dist > dist:
+            min_dist = dist
+            min_stop_id = stop.stop_id
+    if min_stop_id:
+        return jsonify({"stopId": min_stop_id}), 200
+    return jsonify("Error")
 
 
 if __name__ == '__main__':
