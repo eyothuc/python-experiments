@@ -152,11 +152,13 @@ def add_list(name, stops_ids, user_id):
                                    stops=stops)
         session.add(new_list)
         session.commit()
-        return "Success"
+        return new_list
 
 
 def add_stops_to_list(username, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
+    if not stops_list:
+        return {"message": "No such list"}
     user_id = get_user_by_username(username).user_id
     if stops_list.user_id != user_id:
         # return "Trying to access different user's list"
@@ -201,7 +203,9 @@ def update_stops_to_list(user_id, list_id, stops_ids):
 
 def get_list_by_id(list_id):
     with Session(ENGINE) as session:
-        return session.query(tables.StopList).get(list_id)
+        return session.query(tables.StopList).filter(
+                tables.StopList.list_id.in_(list_id)).all()
+        # return session.query(tables.StopList).get(list_id)
 
 
 def get_lists_by_user_id(user_id):
