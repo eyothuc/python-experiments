@@ -23,6 +23,8 @@ interface Stop {
   name: string;
   lat: number;
   lon: number;
+  transport_type: string;
+  arrival: string;
 }
 
 interface Transport {
@@ -48,17 +50,17 @@ const MapComponent: React.FC = () => {
     { id: number; position: LatLngTuple; text: string }[]
   >([]);
   const [selectedStopTransport, setSelectedStopTransport] = useState<
-    Transport[] | null
+    any[] | null
   >(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [checkedLists, setCheckedLists] = useState<number[]>([]);
-  const [stopLists, setStopLists] = useState<Record<number, number[]>>({});
+  const [selectedStops, setSelectedStops] = useState<number[]>();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<number | null>(null);
   const [isAddListModalOpen, setAddListModalOpen] = useState(false); // Состояние для нового модального окна
   const [newListName, setNewListName] = useState(""); // Название нового списка
-  const [userLists, setUserLists] = useState<UserList[]>([]); // Списки пользователя
+  const [userLists, setUserLists] = useState<any>([]); // Списки пользователя
   const router = useRouter();
 
   // Обновление видимых остановок при перемещении карты
@@ -78,6 +80,21 @@ const MapComponent: React.FC = () => {
     });
     return null;
   };
+
+  const toggleStopSelection = (stopId: number) => {
+    setSelectedStops((prev: any) =>
+      prev.includes(stopId)
+        ? prev.filter((id: number) => id !== stopId)
+        : [...prev, stopId]
+    );
+  };
+
+  useEffect(() => {
+    const selectedStopIds = userLists
+      .filter((list: any) => checkedLists.includes(list.list_info.id))
+      .flatMap((list: any) => list.list_info.stops.map((stop: any) => stop.id));
+    setSelectedStops(selectedStopIds);
+  }, [checkedLists, userLists]);
 
   function calculateArrivalTime(arrivalTime: string): string {
     const arrivalDate = new Date(arrivalTime);
@@ -152,7 +169,7 @@ const MapComponent: React.FC = () => {
       const response = await axios.post(`/api/lists/user/${currentUser}`, {
         name,
       });
-      setUserLists((prev) => [...prev, response.data]);
+      setUserLists((prev: any) => [...prev, response.data]);
       alert("Список успешно создан!");
     } catch (error) {
       console.error("Ошибка при создании списка:", error);
@@ -295,25 +312,26 @@ const MapComponent: React.FC = () => {
       {/* Список транспорта */}
       {selectedStopTransport && (
         <div className="absolute top-5 right-10 overflow-y-auto h-96 bg-white shadow-lg rounded-lg p-4 z-[1000] max-w-sm">
-          <h4 className="text-lg font-bold text-center mb-3">
-            Транспорт на остановке
-          </h4>
+          <h4 className="font-bold text-center mb-3">Транспорт на остановке</h4>
           <ul style={{ listStyleType: "none", padding: 0, margin: 0 }}>
-            {selectedStopTransport.map((transport) => (
-              <li
-                key={transport.vehicle_id}
-                style={{
-                  borderBottom: "1px solid #ddd",
-                  padding: "5px 0",
-                  fontSize: "14px",
-                }}
-              >
-                <strong>Маршрут:</strong> {transport.route_id} <br />
-                <strong>Транспорт:</strong> {transport.vehicle_id} <br />
-                <strong>Прибывает через:</strong>{" "}
-                {calculateArrivalTime(transport.arrival)}
-              </li>
-            ))}
+            {selectedStopTransport.map((transport) => {
+              console.log(transport);
+              return (
+                <li
+                  key={transport.vehicle_id}
+                  style={{
+                    borderBottom: "1px solid #ddd",
+                    padding: "5px 0",
+                    fontSize: "14px",
+                  }}
+                >
+                  <strong>Номер транспорта:</strong>{" "}
+                  {transport.route_short_name} <br />
+                  <strong>Прибывает через:</strong>{" "}
+                  {calculateArrivalTime(transport.arrival)}
+                </li>
+              );
+            })}
           </ul>
 
           <button
@@ -328,12 +346,10 @@ const MapComponent: React.FC = () => {
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="User Info"
-        className="modal bg-white rounded-lg shadow-lg p-5 max-w-3xl w-[1000px] mx-auto z-[1001] mt-10"
+        className="modal bg-white rounded-lg max-h-[90%] overflow-y-auto overflow-x-hidden shadow-lg p-5 w-[1000px] border-gray-600 border mx-auto z-[1001] mt-10"
         overlayClassName="overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center z-[1001] items-center"
       >
-        <h2 className="text-xl font-bold mb-3 text-center">
-          Профиль пользователя
-        </h2>
+        <h2 className="text-xl font-bold mb-3 text-center">Профиль</h2>
         <p className="text-sm mb-4">
           <strong>Имя:</strong> {currentUser}
         </p>
@@ -341,30 +357,43 @@ const MapComponent: React.FC = () => {
         <div className="w-full">
           <h3 className="text-lg font-bold mb-2">Списки пользователя:</h3>
           <ul className="grid grid-cols-2 gap-4 w-full">
-            {userLists.map((list) => {
-              console.log(list);
+            {userLists.map((list: any) => {
               return (
                 <li
-                  key={list.id}
+                  key={list.list_info.id}
                   className="flex flex-col gap-2 items-center w-full border-gray-600 border p-2 rounded-lg bg-zinc-100"
                 >
                   <div className="flex w-full">
                     <input
                       type="checkbox"
-                      checked={checkedLists.includes(list.id)}
-                      onChange={() => toggleListSelection(list.id)}
+                      checked={checkedLists.includes(list.list_info.id)}
+                      onChange={() => toggleListSelection(list.list_info.id)}
                       className="mr-2"
                     />
-                    <span>{list.name}</span>
+                    <span className="font-bold text-xl">
+                      {list.list_info.name}
+                    </span>
                   </div>
-                  {list.stops.length > 0 && (
-                    <ul className="w-full mt-2 border-t border-gray-300 pt-2">
-                      {list.stops.map((stop) => (
-                        <li
-                          key={stop.id}
-                          className="flex items-center justify-between"
-                        >
-                          <span>{stop.name}</span>
+                  {list.list_info.stops.length > 0 && (
+                    <ul className="w-full flex flex-col mt-2 border-t border-gray-300 pt-2">
+                      {list.list_info.stops.map((stop: any, id: number) => (
+                        <li key={stop.id} className="flex flex-col gap-1">
+                          <span className="text-lg border-y border-gray-600 py-2">
+                            {stop.name}
+                          </span>
+                          <div className="flex flex-col text-sm gap-1 my-2">
+                            {list.stops[id].map((t: any) => {
+                              return (
+                                <div key={t.route_id}>{`${
+                                  stop.transport_type === "bus"
+                                    ? "Автобус"
+                                    : "Троллейбус"
+                                } ${
+                                  t.route_short_name
+                                } - ${calculateArrivalTime(t.arrival)}`}</div>
+                              );
+                            })}
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -420,7 +449,12 @@ const MapComponent: React.FC = () => {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapEventHandler />
         <MarkerClusterGroup>
-          {showedLocations.map((location) => (
+          {(selectedStops && selectedStops.length > 0
+            ? locations.filter((location) =>
+                selectedStops.includes(location.id)
+              )
+            : showedLocations
+          ).map((location) => (
             <Marker
               key={location.id}
               position={location.position}
@@ -445,9 +479,12 @@ const MapComponent: React.FC = () => {
                       onChange={(e) => setSelectedList(Number(e.target.value))}
                     >
                       <option value="">-- Выбрать список --</option>
-                      {userLists.map((list) => (
-                        <option key={list.id} value={list.id}>
-                          {list.name}
+                      {userLists.map((list: any) => (
+                        <option
+                          key={list.list_info.id}
+                          value={list.list_info.id}
+                        >
+                          {list.list_info.name}
                         </option>
                       ))}
                     </select>
