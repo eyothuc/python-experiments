@@ -31,6 +31,12 @@ interface Transport {
   arrival: string;
 }
 
+interface UserList {
+  id: number;
+  name: string;
+  stops: Stop[];
+}
+
 Modal.setAppElement(document.body);
 axios.defaults.withCredentials = true;
 
@@ -52,16 +58,8 @@ const MapComponent: React.FC = () => {
   const [selectedList, setSelectedList] = useState<number | null>(null);
   const [isAddListModalOpen, setAddListModalOpen] = useState(false); // Состояние для нового модального окна
   const [newListName, setNewListName] = useState(""); // Название нового списка
+  const [userLists, setUserLists] = useState<UserList[]>([]); // Списки пользователя
   const router = useRouter();
-
-  // const createAxiosInstance = () => {
-  //   const instance = axios.create({
-  //     withCredentials: true, // Включаем отправку куки
-  //   });
-  //   return instance;
-  // };
-
-  // const axiosInstance = createAxiosInstance();
 
   // Обновление видимых остановок при перемещении карты
   const MapEventHandler: React.FC = () => {
@@ -139,9 +137,52 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  const fetchUserLists = async (username: string) => {
+    try {
+      const response = await axios.get(`/api/lists/user/${username}`);
+      setUserLists(response.data);
+    } catch (error) {
+      console.error("Ошибка при получении списков пользователя:", error);
+    }
+  };
+
+  const createUserList = async (name: string) => {
+    if (!currentUser) return;
+    try {
+      const response = await axios.post(`/api/lists/user/${currentUser}`, {
+        name,
+      });
+      setUserLists((prev) => [...prev, response.data]);
+      alert("Список успешно создан!");
+    } catch (error) {
+      console.error("Ошибка при создании списка:", error);
+      alert("Ошибка при создании списка. Пожалуйста, попробуйте снова.");
+    }
+  };
+
+  const addStopToList = async (listId: number, stopId: number) => {
+    if (!currentUser) return;
+    try {
+      const response = await axios.post(`/api/lists/${listId}`, {
+        username: currentUser,
+        stopId,
+      });
+      alert("Остановка успешно добавлена в список!");
+      if (currentUser) fetchUserLists(currentUser);
+    } catch (error) {
+      console.error("Ошибка при добавлении остановки в список:", error);
+      alert(
+        "Ошибка при добавлении остановки в список. Пожалуйста, попробуйте снова."
+      );
+    }
+  };
+
   // Вызов в useEffect
   useEffect(() => {
+    const username = localStorage.getItem("currentUser");
+    console.log(username);
     setCurrentUser(localStorage.getItem("currentUser"));
+    if (username) fetchUserLists(username);
     setLoading(true); // Показываем загрузку перед выполнением запросов
     fetchStops(); // Запуск функции с повторными попытками
   }, []);
@@ -188,31 +229,17 @@ const MapComponent: React.FC = () => {
 
   const addToList = (stopId: number) => {
     if (selectedList !== null) {
-      setStopLists((prev) => ({
-        ...prev,
-        [selectedList]: [...(prev[selectedList] || []), stopId],
-      }));
+      addStopToList(selectedList, stopId);
     }
   };
 
   // Добавление нового списка
   const handleAddNewList = () => {
-    const addList = async (name: string) => {
-      try {
-        const response = await axios.post(`/api/lists`, { name });
-        const newListId = response.data.id; // Предполагаем, что сервер возвращает ID нового списка
-        setCheckedLists((prev) => [...prev, newListId]);
-        alert("Список успешно создан!");
-      } catch (error) {
-        console.error("Ошибка при создании списка:", error);
-        alert("Ошибка при создании списка. Пожалуйста, попробуйте снова.");
-      }
-    };
-
     if (newListName.trim()) {
-      addList(newListName);
+      createUserList(newListName);
       setNewListName(""); // Сбрасываем ввод
       setAddListModalOpen(false); // Закрываем модальное окно
+      if (currentUser) fetchUserLists(currentUser);
     } else {
       alert("Пожалуйста, введите название списка.");
     }
@@ -301,7 +328,7 @@ const MapComponent: React.FC = () => {
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="User Info"
-        className="modal bg-white rounded-lg shadow-lg p-5 max-w-3xl mx-auto z-[1001] mt-10"
+        className="modal bg-white rounded-lg shadow-lg p-5 max-w-3xl w-[1000px] mx-auto z-[1001] mt-10"
         overlayClassName="overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center z-[1001] items-center"
       >
         <h2 className="text-xl font-bold mb-3 text-center">
@@ -311,26 +338,52 @@ const MapComponent: React.FC = () => {
           <strong>Имя:</strong> {currentUser}
         </p>
 
-        <div>
-          <h3 className="text-lg font-bold mb-2">Выбор списков:</h3>
-          <ul className="grid grid-cols-2 gap-4">
-            {locations.map((loc) => (
-              <li key={loc.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={checkedLists.includes(loc.id)}
-                  onChange={() => toggleListSelection(loc.id)}
-                  className="mr-2"
-                />
-                <span>{loc.text}</span>
-              </li>
-            ))}
+        <div className="w-full">
+          <h3 className="text-lg font-bold mb-2">Списки пользователя:</h3>
+          <ul className="grid grid-cols-2 gap-4 w-full">
+            {userLists.map((list) => {
+              console.log(list);
+              return (
+                <li
+                  key={list.id}
+                  className="flex flex-col gap-2 items-center w-full border-gray-600 border p-2 rounded-lg bg-zinc-100"
+                >
+                  <div className="flex w-full">
+                    <input
+                      type="checkbox"
+                      checked={checkedLists.includes(list.id)}
+                      onChange={() => toggleListSelection(list.id)}
+                      className="mr-2"
+                    />
+                    <span>{list.name}</span>
+                  </div>
+                  {list.stops.length > 0 && (
+                    <ul className="w-full mt-2 border-t border-gray-300 pt-2">
+                      {list.stops.map((stop) => (
+                        <li
+                          key={stop.id}
+                          className="flex items-center justify-between"
+                        >
+                          <span>{stop.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+          <button
+            onClick={() => setAddListModalOpen(true)}
+            className="w-full mt-4 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600"
+          >
+            Создать новый список
+          </button>
         </div>
 
         <button
           onClick={() => setModalIsOpen(false)}
-          className="mt-5 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+          className="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
         >
           Закрыть
         </button>
@@ -392,9 +445,9 @@ const MapComponent: React.FC = () => {
                       onChange={(e) => setSelectedList(Number(e.target.value))}
                     >
                       <option value="">-- Выбрать список --</option>
-                      {checkedLists.map((listId) => (
-                        <option key={listId} value={listId}>
-                          Список {listId}
+                      {userLists.map((list) => (
+                        <option key={list.id} value={list.id}>
+                          {list.name}
                         </option>
                       ))}
                     </select>

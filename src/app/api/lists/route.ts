@@ -24,7 +24,6 @@ export async function POST(request: Request) {
         headers: {
           Cookie: cookies,
         },
-        withCredentials: true, // Включаем отправку куков
       }
     );
 
