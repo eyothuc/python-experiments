@@ -6,6 +6,8 @@ from zipfile import ZipFile
 import requests
 from google.transit import gtfs_realtime_pb2
 
+import database
+
 FEED_DIR = '../gtfs_csv'
 GTFS_URL = 'https://transport.orgp.spb.ru/Portal/transport/internalapi/gtfs'
 
@@ -39,8 +41,12 @@ def get_stop_forecast_realtime_info(stop_id):
     for entity in feed.entity:
         stop_info.append(dict())
         trip_update = entity.trip_update
-        stop_info[-1]['route_id'] = int(entity.trip_update.trip.route_id)
-        stop_info[-1]['vehicle_id'] = int(entity.trip_update.vehicle.id)
+        route_id = int(trip_update.trip.route_id)
+        route_sname, route_lname = database.get_route_names_by_id(route_id)
+        stop_info[-1]['route_id'] = route_id
+        stop_info[-1]['route_short_name'] = route_sname
+        stop_info[-1]['route_long_name'] = route_lname
+        stop_info[-1]['vehicle_id'] = int(trip_update.vehicle.id)
         stop_time_update = trip_update.stop_time_update[0]
         time = int(stop_time_update.arrival.time)
         stop_info[-1]['arrival'] = \
