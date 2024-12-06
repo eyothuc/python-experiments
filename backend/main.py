@@ -168,11 +168,10 @@ def add_stop_to_list(list_id):
     if not stops or not username:
         return 'No input'
 
-    res = database.add_stops_to_list(username,
-                                     int(list_id), stops)
-    if res:
+    res = database.add_stops_to_list(username, int(list_id), stops)
+    if not res:
         return 'forbidden', 403
-    return jsonify(res), 200
+    return jsonify(res.to_dict()), 200
 
 
 @app.route('/api/lists/<list_id>/remove', methods=['POST'])
@@ -193,7 +192,7 @@ def remove_stop_from_list(list_id):
 @app.route('/api/lists/<list_id>', methods=['GET'])
 @login_required
 def get_list_by_id(list_id):
-    return jsonify(database.get_list_by_id([int(list_id)]).to_dict())
+    return jsonify(database.get_list_by_id(int(list_id)).to_dict())
 
 
 @app.route('/api/lists/user/<username>', methods=['GET'])
@@ -225,38 +224,26 @@ def add_list_to_user_by_username(username):
     name = data.get('name', None)
 
     if not name:
-        return jsonify({"message": "Имя списка (name) обязательно"}), 400
+        return jsonify({"message": "List name (name) is required"}), 400
 
     new_list = database.add_list(name, stops, user.user_id)
     return jsonify(new_list.to_dict()), 201
 
 
-@app.route('/api/lists/user/<username>/closest', methods=['GET'])
-def get_closest_stop(username):
-    user = database.get_user_by_username(username)
-    if not user:
-        return jsonify({"message": "Пользователь не найден"}), 404
-
+@app.route('/api/lists/<list_id>/delete', methods=['POST'])
+def delete_list(list_id):
     data = request.json
-    lists = list(map(int, data.get('listIds', [])))
-    coord_x, coord_y = list(map(int, data.get('coords', [])))
+    username = data.get('username', None)
 
-    stops = []
-    for lst in database.get_list_by_id(lists):
-        stops.extend(lst.stops)
+    if not username:
+        return jsonify({"message": "Username (username) is required"}), 400
 
-    min_dist = float("inf")
-    min_stop_id = None
+    res = database.delete_list(int(list_id), username)
 
-    for stop in stops:
-        st_x, st_y = stop.lat, stop.lon
-        dist = (coord_x - st_x) ** 2 + (coord_y - st_y) ** 2
-        if min_dist > dist:
-            min_dist = dist
-            min_stop_id = stop.stop_id
-    if min_stop_id:
-        return jsonify({"stopId": min_stop_id}), 200
-    return jsonify("Error")
+    if res:
+        return jsonify({"message": res})
+
+    return jsonify({"message": "Success"}), 201
 
 
 if __name__ == '__main__':

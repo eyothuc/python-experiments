@@ -28,7 +28,7 @@ stop_to_list_table = Table(
     "stop_to_list_table",
     Base.metadata,
     Column("stops", ForeignKey("stops.stop_id")),
-    Column("stoplists", ForeignKey("stoplists.list_id")),
+    Column("stoplists", ForeignKey("stoplists.list_id", ondelete="CASCADE")),
 )
 
 
@@ -84,7 +84,8 @@ class StopList(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True)
     stops: Mapped[List["Stop"]] = relationship(secondary=stop_to_list_table,
                                                lazy='subquery',
-                                               cascade='all')
+                                               cascade='all, delete',
+                                               passive_deletes=True)
 
     def to_dict(self, collect_stop=["stop_id", "stop_name", "stop_lat",
                                     "stop_lon", "transport_type"],

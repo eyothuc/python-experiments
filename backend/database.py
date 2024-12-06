@@ -1,12 +1,13 @@
 from sqlalchemy import text
-import pandas as pd
-import pandas
+from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+import pandas as pd
+import pandas
+
 import gtfs_handlers
 import tables
-from gtfs_handlers import download_feed
 
 ENGINE = create_engine('postgresql://postgres:q1w2@maps-postgres:5432', echo=True)
 
@@ -69,7 +70,7 @@ def execute_sql(sql):
 
 
 def update_db():
-    download_feed()
+    gtfs_handlers.download_feed()
 
     # Stops
     file_name = f'{gtfs_handlers.FEED_DIR}/stops.txt'
@@ -145,6 +146,7 @@ def create_user(username, password):
 
 def add_list(name, stops_ids, user_id):
     with Session(ENGINE) as session:
+        session.expire_on_commit = False
         stops = session.query(tables.Stop).filter(
             tables.Stop.stop_id.in_(stops_ids)).all()
         new_list = tables.StopList(user_id=user_id,
@@ -155,16 +157,33 @@ def add_list(name, stops_ids, user_id):
         return new_list
 
 
+def delete_list(list_id, username):
+    user_id = get_user_by_username(username).user_id
+    stops_list = get_list_by_id(list_id)
+    if not stops_list:
+        return "No such list"
+    if stops_list.user_id != user_id:
+        return "Forbidden"
+    with Session(ENGINE) as session:
+        session.query(tables.stop_to_list_table).filter(
+                Column("stoplists") == list_id).delete()
+        for stop in stops_list.stops:
+            stops_list.stops.remove(stop)
+        session.delete(stops_list)
+        session.commit()
+
+
 def add_stops_to_list(username, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
-        return {"message": "No such list"}
+        return "No such list"
     user_id = get_user_by_username(username).user_id
     if stops_list.user_id != user_id:
         # return "Trying to access different user's list"
-        return {"message": "Forbidden"}
+        return
 
     with Session(ENGINE) as session:
+        session.expire_on_commit = False
         new_stop = session.query(tables.Stop).filter(
             tables.Stop.stop_id == stop_id).first()
         if new_stop in stops_list.stops:
@@ -172,7 +191,7 @@ def add_stops_to_list(username, list_id, stop_id):
         stops_list.stops.append(new_stop)
         session.add(stops_list)
         session.commit()
-        return stops_list.to_dict()
+        return stops_list
 
 
 def remove_stops_from_list(username, list_id, stop_id):
@@ -182,9 +201,10 @@ def remove_stops_from_list(username, list_id, stop_id):
         return "Trying to access different user's list"
 
     with Session(ENGINE) as session:
-        session.query("stop_to_list_table").\
-            filter(tables.stop_to_list_table.stoplists == list_id,
-                   tables.stop_to_list_table.stops == stop_id).delete()
+        session.expire_on_commit = False
+        session.query(tables.stop_to_list_table).\
+            filter(Column("stoplists") == list_id,
+                   Column("stops") == stop_id).delete()
         session.commit()
 
 
@@ -194,6 +214,7 @@ def update_stops_to_list(user_id, list_id, stops_ids):
         return "Trying to access different user's list"
 
     with Session(ENGINE) as session:
+        session.expire_on_commit = False
         new_stops = session.query(tables.Stop).filter(
             tables.Stop.stop_id.in_(stops_ids)).all()
         stops_list.stops = new_stops
@@ -203,9 +224,8 @@ def update_stops_to_list(user_id, list_id, stops_ids):
 
 def get_list_by_id(list_id):
     with Session(ENGINE) as session:
-        return session.query(tables.StopList).filter(
-                tables.StopList.list_id.in_(list_id)).all()
-        # return session.query(tables.StopList).get(list_id)
+        session.expire_on_commit = False
+        return session.query(tables.StopList).get(list_id)
 
 
 def get_lists_by_user_id(user_id):
