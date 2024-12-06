@@ -7,6 +7,7 @@ import requests
 from google.transit import gtfs_realtime_pb2
 
 import database
+import tables
 
 FEED_DIR = '../gtfs_csv'
 GTFS_URL = 'https://transport.orgp.spb.ru/Portal/transport/internalapi/gtfs'
@@ -53,6 +54,18 @@ def get_stop_forecast_realtime_info(stop_id):
             strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
 
     return stop_info
+
+
+def get_stopforecast_for_lists(user_lists: tables.StopList):
+    res = []
+    for lst in user_lists:
+        res.append(dict())
+        res[-1]["list_info"] = lst.to_dict(ignore_stops=False)
+        res[-1]["stops"] = []
+        for stop in lst.stops:
+            res[-1]["stops"].append(dict())
+            res[-1]["stops"][-1] =\
+                get_stop_forecast_realtime_info(stop.stop_id)
 
 
 def get_vehicle_forecast_realtime_info(vehicle_ids):
