@@ -16,6 +16,8 @@ services:
       retries: 3
 
   backend:
+    build:
+      context: ./
     image: maps-backend
     container_name: maps-backend
     networks:
