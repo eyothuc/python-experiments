@@ -128,10 +128,10 @@ def getVehiclePositionInfo():
     return jsonify(vehiclePosition)
 
 
-@app.route('/api/create', methods=['GET'])
-def create_db():
-    database.create_db()
-    return jsonify("Creating")
+# @app.route('/api/create', methods=['GET'])
+# def create_db():
+#     database.create_db()
+#     return jsonify("Creating")
 
 
 @app.route('/api/update', methods=['GET'])
@@ -247,4 +247,5 @@ def delete_list(list_id):
 
 
 if __name__ == '__main__':
+    database.create_db()
     app.run(debug=True, port=8000, host='0.0.0.0')
