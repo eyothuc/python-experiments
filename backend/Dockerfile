@@ -1,13 +1,13 @@
-FROM node:18-alpine
+FROM python:3.11
 
-WORKDIR /app
+RUN apt-get -y update
+COPY ./requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY package*.json ./
+COPY ./ site
+WORKDIR /site
 
-RUN npm install
+EXPOSE 8000
 
-COPY ./frontend ./
-
-EXPOSE 3000
-
-CMD npm run dev
+ENTRYPOINT ["python"]
+CMD ["./main.py"]

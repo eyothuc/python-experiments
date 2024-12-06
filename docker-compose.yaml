@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: q1w2
     networks:
-      - backend_network
+      - maps_network
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready", "-U", "postgres" ]
@@ -17,17 +17,30 @@ services:
 
   backend:
     build:
-      context: ./
+      context: ./backend
     image: maps-backend
     container_name: maps-backend
     networks:
-      - backend_network
+      - maps_network
     ports:
       - 8000:8000
     depends_on:
       db:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+    image: maps-frontend
+    container_name: maps-frontend
+    networks:
+      - maps_network
+    ports:
+      - 3000:3000
+    depends_on:
+      backend:
+        condition: service_started
+
 networks:
-  backend_network:
-    name: backend_network
+  maps_network:
+    driver: bridge
