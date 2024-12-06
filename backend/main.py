@@ -25,7 +25,6 @@ def login_required(f):
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-# CORS(app, supports_credentials=True, origins=["https://your-frontend-domain.com"])
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = 'your_key'
 app.config['SESSION_PERMANENT'] = True
@@ -146,47 +145,32 @@ def get_list():
     return jsonify(current_user.get_lists_dict()), 200
 
 
-@app.route('/api/lists', methods=['POST'])
-@login_required
-def add_list():
-    data = request.json
-    stops = list(map(int, data.get('stops', [])))
-    name = data.get('name', None)
-    if name is None:
-        return jsonify("Error")
-    new_list = database.add_list(name, stops, current_user.user_id)
-
-    return jsonify(new_list.to_dict()), 200
-
-
 @app.route('/api/lists/<list_id>/add', methods=['POST'])
-# @login_required
+@login_required
 def add_stop_to_list(list_id):
     data = request.json
-    username = data.get('username', '')
-    stops = int(data.get('stopId', 0))
-    if not stops or not username:
-        return 'No input'
-
-    res = database.add_stops_to_list(username, int(list_id), stops)
+    stop = int(data.get('stopId', 0))
+    if not stop:
+        return jsonify('Stop id is required')
+    res = database.add_stops_to_list(current_user.user_id,
+                                     int(list_id), stop)
     if not res:
         return 'forbidden', 403
     return jsonify(res.to_dict()), 200
 
 
 @app.route('/api/lists/<list_id>/remove', methods=['POST'])
-# @login_required
+@login_required
 def remove_stop_from_list(list_id):
     data = request.json
-    username = data.get('username', '')
-    stop_id = int(data.get('stopId', 0))
-    if not stop_id or not username:
-        return 'No input'
-
-    res = database.remove_stops_from_list(username, int(list_id), stop_id)
+    stop = int(data.get('stopId', 0))
+    if not stop:
+        return jsonify('Stop id is required')
+    res = database.remove_stops_from_list(current_user.user_id,
+                                          int(list_id), stop)
     if res:
-        return 'Forbidden', 403
-    return jsonify(res), 200
+        return jsonify('Forbidden'), 403
+    return jsonify("Success"), 200
 
 
 @app.route('/api/lists/<list_id>', methods=['GET'])
@@ -195,55 +179,34 @@ def get_list_by_id(list_id):
     return jsonify(database.get_list_by_id(int(list_id)).to_dict())
 
 
-@app.route('/api/lists/user/<username>', methods=['GET'])
-def get_lists_by_username(username):
-    user = database.get_user_by_username(username)
-    if not user:
-        return jsonify({"message": "Пользователь не найден"}), 404
-    user_lists = database.get_lists_by_user_id(user.user_id)
-    lists = []
-    for lst in user_lists:
-        lists.append(dict())
-        lists[-1]["list_info"] = lst.to_dict(ignore_stops=False)
-        lists[-1]["stops"] = []
-        for stop in lst.stops:
-            lists[-1]["stops"].append(dict())
-            lists[-1]["stops"][-1] =\
-                gtfs_handlers.get_stop_forecast_realtime_info(stop.stop_id)
-    return jsonify(lists), 200
-
-
-@app.route('/api/lists/user/<username>', methods=['POST'])
-def add_list_to_user_by_username(username):
-    user = database.get_user_by_username(username)
-    if not user:
-        return jsonify({"message": "Пользователь не найден"}), 404
-
+@app.route('/api/lists', methods=['POST'])
+@login_required
+def add_list():
     data = request.json
     stops = list(map(int, data.get('stops', [])))
     name = data.get('name', None)
-
     if not name:
         return jsonify({"message": "List name (name) is required"}), 400
+    new_list = database.add_list(name, stops, current_user.user_id)
 
-    new_list = database.add_list(name, stops, user.user_id)
-    return jsonify(new_list.to_dict()), 201
+    return jsonify(new_list.to_dict()), 200
 
 
-@app.route('/api/lists/<list_id>/delete', methods=['POST'])
+@app.route('/api/lists', methods=['GET'])
+@login_required
+def get_lists():
+    user_lists = database.get_lists_by_user_id(current_user.user_id)
+    lists = gtfs_handlers.get_stopforecast_for_lists(user_lists)
+    return jsonify(lists), 200
+
+
+@app.route('/api/lists/<list_id>', methods=['DELETE'])
+@login_required
 def delete_list(list_id):
-    data = request.json
-    username = data.get('username', None)
-
-    if not username:
-        return jsonify({"message": "Username (username) is required"}), 400
-
-    res = database.delete_list(int(list_id), username)
-
+    res = database.delete_list(int(list_id), current_user.user_id)
     if res:
         return jsonify({"message": res})
-
-    return jsonify({"message": "Success"}), 201
+    return jsonify({"message": "Success"}), 200
 
 
 if __name__ == '__main__':

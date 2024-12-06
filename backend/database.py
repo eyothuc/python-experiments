@@ -157,8 +157,7 @@ def add_list(name, stops_ids, user_id):
         return new_list
 
 
-def delete_list(list_id, username):
-    user_id = get_user_by_username(username).user_id
+def delete_list(list_id, user_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
         return "No such list"
@@ -166,20 +165,18 @@ def delete_list(list_id, username):
         return "Forbidden"
     with Session(ENGINE) as session:
         session.query(tables.stop_to_list_table).filter(
-                Column("stoplists") == list_id).delete()
+            Column("stoplists") == list_id).delete()
         for stop in stops_list.stops:
             stops_list.stops.remove(stop)
         session.delete(stops_list)
         session.commit()
 
 
-def add_stops_to_list(username, list_id, stop_id):
+def add_stops_to_list(user_id, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
         return "No such list"
-    user_id = get_user_by_username(username).user_id
     if stops_list.user_id != user_id:
-        # return "Trying to access different user's list"
         return
 
     with Session(ENGINE) as session:
@@ -194,9 +191,10 @@ def add_stops_to_list(username, list_id, stop_id):
         return stops_list
 
 
-def remove_stops_from_list(username, list_id, stop_id):
+def remove_stops_from_list(user_id, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
-    user_id = get_user_by_username(username).user_id
+    if not stops_list:
+        return "No such list"
     if stops_list.user_id != user_id:
         return "Trying to access different user's list"
 
@@ -210,6 +208,8 @@ def remove_stops_from_list(username, list_id, stop_id):
 
 def update_stops_to_list(user_id, list_id, stops_ids):
     stops_list = get_list_by_id(list_id)
+    if not stops_list:
+        return "No such list"
     if stops_list.user_id != user_id:
         return "Trying to access different user's list"
 
@@ -236,6 +236,8 @@ def get_lists_by_user_id(user_id):
 
 def delete_stops_from_list(user_id, list_id, stops):
     stops_list = get_list_by_id(list_id)
+    if not stops_list:
+        return "No such list"
     if stops_list.user_id != user_id:
         return "Trying to access different user's list"
 
