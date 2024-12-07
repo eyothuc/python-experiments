@@ -15,32 +15,19 @@ const LoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const response = await loginUser(username, password, isRemember);
+    try {
+      const response = await loginUser(username, password, isRemember);
 
-    // Сохраняем пользователя в localStorage
-    localStorage.setItem("currentUser", username);
+      // Сохраняем пользователя в localStorage
+      localStorage.setItem("currentUser", username);
 
-    // Извлечение куков из ответа
-    const cookies = response.data.cookies;
+      console.log(response);
 
-    if (cookies && Array.isArray(cookies)) {
-      try {
-        // Установка каждого куки
-        cookies.forEach((cookie: string) => {
-          const [name, value] = cookie.split("=");
-          Cookies.set(name.trim(), value.trim(), {
-            path: "/",
-            expires: isRemember ? 7 : undefined, // Срок действия 7 дней, если выбрано "Запомнить меня"
-          });
-        });
-        setMessage("Успешный вход");
-        router.push("/"); // Переход на страницу с картой
-      } catch (error) {
-        setMessage("Ошибка сохранения куков.");
-        console.error("Ошибка:", error);
-      }
-    } else {
-      setMessage("Не удалось сохранить куки. Проверьте сервер.");
+      setMessage("Успешный вход");
+      router.push("/"); // Переход на страницу с картой
+    } catch (error) {
+      setMessage("Ошибка сохранения куков.");
+      console.error("Ошибка:", error);
     }
   };
 

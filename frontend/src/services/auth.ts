@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL; // Замените на ваш
 // Регистрация пользователя
 export const registerUser = async (username: string, password: string) => {
   const response = await axios.post(
-    `${API_URL}/register`,
+    `${API_URL}/api/auth/register`,
     {
       username,
       password,
@@ -14,7 +14,9 @@ export const registerUser = async (username: string, password: string) => {
       headers: {
         "Content-Type": "application/json",
       },
-    }
+      withCredentials: true
+    },
+    
   );
 
   if (response.status !== 200) {
@@ -30,7 +32,7 @@ export const loginUser = async (
   isRemember: boolean
 ) => {
   const response = await axios.post(
-    `${API_URL}/login`,
+    `${API_URL}/api/auth/login`,
     {
       username,
       password,
@@ -40,6 +42,7 @@ export const loginUser = async (
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true
     }
   );
 

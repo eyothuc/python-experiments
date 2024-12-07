@@ -2,20 +2,25 @@
 
 import React, { useState } from "react";
 import { registerUser } from "@/services/auth";
+import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const router = useRouter()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const result = await registerUser(username, password);
+      
+      
       setMessage(result);
     } catch (error: any) {
       setMessage(error.message);
     }
+    router.push("/")
   };
 
   return (

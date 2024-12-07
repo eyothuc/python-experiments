@@ -43,7 +43,7 @@ Modal.setAppElement(document.body);
 axios.defaults.withCredentials = true;
 
 const MapComponent: React.FC = () => {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [locations, setLocations] = useState<
     { id: number; position: LatLngTuple; text: string }[]
   >([]);
@@ -91,10 +91,14 @@ const MapComponent: React.FC = () => {
   };
 
   useEffect(() => {
-    const selectedStopIds = userLists
-      .filter((list: any) => checkedLists.includes(list.list_info.id))
-      .flatMap((list: any) => list.list_info.stops.map((stop: any) => stop.id));
-    setSelectedStops(selectedStopIds);
+    if (userLists) {
+      const selectedStopIds = userLists
+        .filter((list: any) => checkedLists.includes(list.list_info.id))
+        .flatMap((list: any) =>
+          list.list_info.stops.map((stop: any) => stop.id)
+        );
+      setSelectedStops(selectedStopIds);
+    }
   }, [checkedLists, userLists]);
 
   function calculateArrivalTime(arrivalTime: string): string {
@@ -157,7 +161,8 @@ const MapComponent: React.FC = () => {
 
   const fetchUserLists = async (username: string) => {
     try {
-      const response = await axios.get(`${API_URL}/api/lists/user/${username}`);
+      const response = await axios.get(`${API_URL}/api/lists`);
+      console.log(response);
       setUserLists(response.data);
     } catch (error) {
       console.error("Ошибка при получении списков пользователя:", error);
@@ -167,14 +172,12 @@ const MapComponent: React.FC = () => {
   const createUserList = async (name: string) => {
     if (!currentUser) return;
     try {
-      const response = await axios.post(`${API_URL}api/lists/user/${currentUser}`, {
+      const response = await axios.post(`${API_URL}/api/lists`, {
         name,
       });
-      setUserLists((prev: any) => [...prev, response.data]);
-      alert("Список успешно создан!");
+      console.log(response);
     } catch (error) {
       console.error("Ошибка при создании списка:", error);
-      alert("Ошибка при создании списка. Пожалуйста, попробуйте снова.");
     }
   };
 
@@ -183,11 +186,14 @@ const MapComponent: React.FC = () => {
     let tries = 0;
     const newInterval = setInterval(async () => {
       try {
-        const response = await axios.post(`${API_URL}/api/lists/${listId}`, {
-          username: currentUser,
-          stopId,
-        });
-        alert("Остановка успешно добавлена в список!");
+        const response = await axios.post(
+          `${API_URL}/api/lists/${listId}/add`,
+          {
+            username: currentUser,
+            stopId,
+          }
+        );
+
         if (currentUser) fetchUserLists(currentUser);
       } catch (error) {
         tries++;
@@ -371,50 +377,51 @@ const MapComponent: React.FC = () => {
         <div className="w-full">
           <h3 className="text-lg font-bold mb-2">Списки пользователя:</h3>
           <ul className="grid grid-cols-2 gap-4 w-full">
-            {userLists.map((list: any) => {
-              return (
-                <li
-                  key={list.list_info.id}
-                  className="flex flex-col gap-2 items-center w-full border-gray-600 border p-2 rounded-lg bg-zinc-100"
-                >
-                  <div className="flex w-full">
-                    <input
-                      type="checkbox"
-                      checked={checkedLists.includes(list.list_info.id)}
-                      onChange={() => toggleListSelection(list.list_info.id)}
-                      className="mr-2"
-                    />
-                    <span className="font-bold text-xl">
-                      {list.list_info.name}
-                    </span>
-                  </div>
-                  {list.list_info.stops.length > 0 && (
-                    <ul className="w-full flex flex-col mt-2 border-t border-gray-300 pt-2">
-                      {list.list_info.stops.map((stop: any, id: number) => (
-                        <li key={stop.id} className="flex flex-col gap-1">
-                          <span className="text-lg border-y border-gray-600 py-2">
-                            {stop.name}
-                          </span>
-                          <div className="flex flex-col text-sm gap-1 my-2">
-                            {list.stops[id].map((t: any) => {
-                              return (
-                                <div key={t.route_id}>{`${
-                                  stop.transport_type === "bus"
-                                    ? "Автобус"
-                                    : "Троллейбус"
-                                } ${
-                                  t.route_short_name
-                                } - ${calculateArrivalTime(t.arrival)}`}</div>
-                              );
-                            })}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
+            {userLists &&
+              userLists.map((list: any) => {
+                return (
+                  <li
+                    key={list.list_info.id}
+                    className="flex flex-col gap-2 items-center w-full border-gray-600 border p-2 rounded-lg bg-zinc-100"
+                  >
+                    <div className="flex w-full">
+                      <input
+                        type="checkbox"
+                        checked={checkedLists.includes(list.list_info.id)}
+                        onChange={() => toggleListSelection(list.list_info.id)}
+                        className="mr-2"
+                      />
+                      <span className="font-bold text-xl">
+                        {list.list_info.name}
+                      </span>
+                    </div>
+                    {list.list_info.stops.length > 0 && (
+                      <ul className="w-full flex flex-col mt-2 border-t border-gray-300 pt-2">
+                        {list.list_info.stops.map((stop: any, id: number) => (
+                          <li key={stop.id} className="flex flex-col gap-1">
+                            <span className="text-lg border-y border-gray-600 py-2">
+                              {stop.name}
+                            </span>
+                            <div className="flex flex-col text-sm gap-1 my-2">
+                              {list.stops[id].map((t: any) => {
+                                return (
+                                  <div key={t.route_id}>{`${
+                                    stop.transport_type === "bus"
+                                      ? "Автобус"
+                                      : "Троллейбус"
+                                  } ${
+                                    t.route_short_name
+                                  } - ${calculateArrivalTime(t.arrival)}`}</div>
+                                );
+                              })}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
           </ul>
           <button
             onClick={() => setAddListModalOpen(true)}
@@ -493,7 +500,7 @@ const MapComponent: React.FC = () => {
                       onChange={(e) => setSelectedList(Number(e.target.value))}
                     >
                       <option value="">-- Выбрать список --</option>
-                      {userLists.map((list: any) => (
+                      {userLists?.map((list: any) => (
                         <option
                           key={list.list_info.id}
                           value={list.list_info.id}

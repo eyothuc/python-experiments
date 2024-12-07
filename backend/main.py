@@ -24,7 +24,7 @@ def login_required(f):
 
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = 'your_key'
 app.config['SESSION_PERMANENT'] = True
@@ -138,11 +138,6 @@ def update_db():
     database.update_db()
     return jsonify("Updating")
 
-
-@app.route('/api/lists', methods=['GET'])
-@login_required
-def get_list():
-    return jsonify(current_user.get_lists_dict()), 200
 
 
 @app.route('/api/lists/<list_id>/add', methods=['POST'])
