@@ -24,13 +24,13 @@ interface Stop {
   lat: number;
   lon: number;
   transport_type: string;
-  arrival: string;
+  arrival: number;
 }
 
 interface Transport {
   route_id: number;
   vehicle_id: number;
-  arrival: string;
+  arrival: number;
 }
 
 interface UserList {
@@ -101,16 +101,18 @@ const MapComponent: React.FC = () => {
     }
   }, [checkedLists, userLists]);
 
-  function calculateArrivalTime(arrivalTime: string): string {
-    const arrivalDate = new Date(arrivalTime);
+  function calculateArrivalTime(arrivalTime: number): string {
+    const arrivalDate = arrivalTime * 1000; // Преобразуем время в секундах в миллисекунды
     const now = new Date();
-    const diffInMs = arrivalDate.getTime() - now.getTime();
+    const diffInMs = arrivalDate - now.getTime(); // Вычисляем разницу в миллисекундах
+
+    console.log(diffInMs, now.getTime(), arrivalDate);
 
     if (diffInMs <= 0) return "Уже прибыл";
 
-    const diffInMinutes = Math.ceil(diffInMs / (1000 * 60));
-    const hours = Math.floor(diffInMinutes / 60);
-    const minutes = diffInMinutes % 60;
+    const diffInMinutes = Math.ceil(diffInMs / (1000 * 60)); // Преобразуем разницу в минуты
+    const hours = Math.floor(diffInMinutes / 60); // Вычисляем количество часов
+    const minutes = diffInMinutes % 60; // Вычисляем количество минут
 
     return hours > 0 ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
   }

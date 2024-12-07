@@ -50,8 +50,7 @@ def get_stop_forecast_realtime_info(stop_id):
         stop_info[-1]['vehicle_id'] = int(trip_update.vehicle.id)
         stop_time_update = trip_update.stop_time_update[0]
         time = int(stop_time_update.arrival.time)
-        stop_info[-1]['arrival'] = \
-            strftime('%Y-%m-%dT%H:%M:%S+03:00', localtime(time))
+        stop_info[-1]['arrival'] = time
 
     return stop_info
 
