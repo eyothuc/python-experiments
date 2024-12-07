@@ -105,6 +105,7 @@ const MapComponent: React.FC = () => {
     const arrivalDate = new Date(arrivalTime);
     const now = new Date();
     const diffInMs = arrivalDate.getTime() - now.getTime();
+
     if (diffInMs <= 0) return "Уже прибыл";
 
     const diffInMinutes = Math.ceil(diffInMs / (1000 * 60));
@@ -258,8 +259,9 @@ const MapComponent: React.FC = () => {
     fetchTransport();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("currentUser"); // Remove the user from localStorage
+    const response = await axios.post(`${API_URL}/api/auth/logout`);
     setCurrentUser(null); // Update the state to reflect the logout
     router.push("/login"); // Redirect to the login page
   };
