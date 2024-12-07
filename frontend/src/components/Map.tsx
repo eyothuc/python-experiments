@@ -43,6 +43,7 @@ Modal.setAppElement(document.body);
 axios.defaults.withCredentials = true;
 
 const MapComponent: React.FC = () => {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
   const [locations, setLocations] = useState<
     { id: number; position: LatLngTuple; text: string }[]
   >([]);
@@ -115,7 +116,7 @@ const MapComponent: React.FC = () => {
 
     while (attempts < retryCount && !success) {
       try {
-        const response = await axios.get(`/api/stops`, {
+        const response = await axios.get(`${API_URL}/api/stops`, {
           withCredentials: true,
         });
 
@@ -156,7 +157,7 @@ const MapComponent: React.FC = () => {
 
   const fetchUserLists = async (username: string) => {
     try {
-      const response = await axios.get(`/api/lists/user/${username}`);
+      const response = await axios.get(`${API_URL}/api/lists/user/${username}`);
       setUserLists(response.data);
     } catch (error) {
       console.error("Ошибка при получении списков пользователя:", error);
@@ -166,7 +167,7 @@ const MapComponent: React.FC = () => {
   const createUserList = async (name: string) => {
     if (!currentUser) return;
     try {
-      const response = await axios.post(`/api/lists/user/${currentUser}`, {
+      const response = await axios.post(`${API_URL}api/lists/user/${currentUser}`, {
         name,
       });
       setUserLists((prev: any) => [...prev, response.data]);
@@ -182,7 +183,7 @@ const MapComponent: React.FC = () => {
     let tries = 0;
     const newInterval = setInterval(async () => {
       try {
-        const response = await axios.post(`/api/lists/${listId}`, {
+        const response = await axios.post(`${API_URL}/api/lists/${listId}`, {
           username: currentUser,
           stopId,
         });
@@ -240,7 +241,7 @@ const MapComponent: React.FC = () => {
   const handleMarkerClick = (id: number) => {
     const fetchTransport = async () => {
       try {
-        const response = await axios.get(`/api/stops/${id}`);
+        const response = await axios.get(`${API_URL}/api/stops/${id}`);
         const transportList: Transport[] = response.data;
         setSelectedStopTransport(transportList);
       } catch (error) {
