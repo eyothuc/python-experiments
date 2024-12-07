@@ -173,10 +173,11 @@ const MapComponent: React.FC = () => {
   const createUserList = async (name: string) => {
     if (!currentUser) return;
     try {
-      const response = await axios.post(`${API_URL}/api/lists`, {
+      await axios.post(`${API_URL}/api/lists`, {
         name,
       });
-      console.log(response);
+      const response = await axios.get(`${API_URL}/api/lists`);
+      setUserLists(response.data);
     } catch (error) {
       console.error("Ошибка при создании списка:", error);
     }
