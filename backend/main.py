@@ -139,12 +139,6 @@ def update_db():
     return jsonify("Updating")
 
 
-@app.route('/api/lists', methods=['GET'])
-@login_required
-def get_list():
-    return jsonify(current_user.get_lists_dict()), 200
-
-
 @app.route('/api/lists/<list_id>/add', methods=['POST'])
 @login_required
 def add_stop_to_list(list_id):

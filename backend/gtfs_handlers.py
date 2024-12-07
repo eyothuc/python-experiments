@@ -66,6 +66,7 @@ def get_stopforecast_for_lists(user_lists: tables.StopList):
             res[-1]["stops"].append(dict())
             res[-1]["stops"][-1] =\
                 get_stop_forecast_realtime_info(stop.stop_id)
+    return res
 
 
 def get_vehicle_forecast_realtime_info(vehicle_ids):
