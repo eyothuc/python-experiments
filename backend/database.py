@@ -1,3 +1,4 @@
+from flask import jsonify
 from sqlalchemy import text
 from sqlalchemy import Column
 from sqlalchemy import create_engine
@@ -9,7 +10,7 @@ import pandas
 import gtfs_handlers
 import tables
 
-ENGINE = create_engine('postgresql://postgres:q1w2@maps-postgres:5432', echo=True)
+ENGINE = create_engine('postgresql://postgres:q1w2@maps-postgres:5432', echo=False)
 
 
 def create_db():
@@ -160,9 +161,9 @@ def add_list(name, stops_ids, user_id):
 def delete_list(list_id, user_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
-        return "No such list"
+        return jsonify("No such list"), 400
     if stops_list.user_id != user_id:
-        return "Forbidden"
+        return jsonify("Forbidden"), 403
     with Session(ENGINE) as session:
         session.query(tables.stop_to_list_table).filter(
             Column("stoplists") == list_id).delete()
@@ -170,33 +171,40 @@ def delete_list(list_id, user_id):
             stops_list.stops.remove(stop)
         session.delete(stops_list)
         session.commit()
+        return jsonify('Success'), 200
 
 
 def add_stops_to_list(user_id, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
-        return "No such list"
+        return jsonify("No such list"), 400
     if stops_list.user_id != user_id:
-        return
+        return jsonify("Forbidden"), 403
 
     with Session(ENGINE) as session:
         session.expire_on_commit = False
-        new_stop = session.query(tables.Stop).filter(
-            tables.Stop.stop_id == stop_id).first()
+
+        new_stop = session.query(tables.Stop).filter(tables.Stop.stop_id == stop_id).first()
+        if not new_stop:
+            return jsonify("Stop not found"), 404
+
+        stops_list = session.merge(stops_list)
+
         if new_stop in stops_list.stops:
-            return stops_list.to_dict()
+            return jsonify(stops_list.to_dict()), 200
+
         stops_list.stops.append(new_stop)
-        session.add(stops_list)
         session.commit()
-        return stops_list
+
+        return jsonify(stops_list.to_dict()), 200
 
 
 def remove_stops_from_list(user_id, list_id, stop_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
-        return "No such list"
+        return jsonify("No such list"), 400
     if stops_list.user_id != user_id:
-        return "Trying to access different user's list"
+        return jsonify("Forbidden"), 403
 
     with Session(ENGINE) as session:
         session.expire_on_commit = False
@@ -204,6 +212,7 @@ def remove_stops_from_list(user_id, list_id, stop_id):
             filter(Column("stoplists") == list_id,
                    Column("stops") == stop_id).delete()
         session.commit()
+        return jsonify('Success'), 200
 
 
 def update_stops_to_list(user_id, list_id, stops_ids):

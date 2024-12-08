@@ -43,7 +43,7 @@ Modal.setAppElement(document.body);
 axios.defaults.withCredentials = true;
 
 const MapComponent: React.FC = () => {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const [locations, setLocations] = useState<
     { id: number; position: LatLngTuple; text: string }[]
   >([]);
@@ -123,6 +123,7 @@ const MapComponent: React.FC = () => {
 
     while (attempts < retryCount && !success) {
       try {
+          console.log(API_URL);
         const response = await axios.get(`${API_URL}/api/stops`, {
           withCredentials: true,
         });

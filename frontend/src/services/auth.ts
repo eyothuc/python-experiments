@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // Замените на ваш URL backend
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ""; // Замените на ваш URL backend
 
 export const registerUser = async (username: string, password: string) => {
   try {

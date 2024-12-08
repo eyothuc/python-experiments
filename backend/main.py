@@ -1,9 +1,8 @@
+from functools import wraps
+
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, current_user
-# from flask_login import login_required
-from functools import wraps
-
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import database
@@ -20,6 +19,7 @@ def login_required(f):
         if not current_user.is_authenticated:
             return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -29,8 +29,8 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = 'your_key'
 app.config['SESSION_PERMANENT'] = True
 
-app.config["SESSION_COOKIE_SAMESITE"] = "None"
-app.config["SESSION_COOKIE_SECURE"] = True
+#app.config["SESSION_COOKIE_SAMESITE"] = "None"
+#app.config["SESSION_COOKIE_SECURE"] = True
 
 login_manager = LoginManager(app)
 # login_manager.login_view = 'login'
@@ -49,10 +49,10 @@ def register():
     password = data.get('password')
     if database.get_user_by_username(username):
         return jsonify({"message":
-                        "Пользователь c таким логином уже существует"}), 401
+                            "Пользователь c таким логином уже существует"}), 401
     if not username or not password:
         return jsonify({"message":
-                        "Поля username и password должны быть заполнены"}), 401
+                            "Поля username и password должны быть заполнены"}), 401
     password_hash = generate_password_hash(password)
     database.create_user(username, password_hash)
     return jsonify({"message": "Регистрация прошла успешно"}), 201
@@ -149,9 +149,7 @@ def add_stop_to_list(list_id):
         return jsonify('Stop id is required')
     res = database.add_stops_to_list(current_user.user_id,
                                      int(list_id), stop)
-    if not res:
-        return 'forbidden', 403
-    return jsonify(res.to_dict()), 200
+    return res
 
 
 @app.route('/api/lists/<list_id>/remove', methods=['POST'])
@@ -163,9 +161,7 @@ def remove_stop_from_list(list_id):
         return jsonify('Stop id is required')
     res = database.remove_stops_from_list(current_user.user_id,
                                           int(list_id), stop)
-    if res:
-        return jsonify('Forbidden'), 403
-    return jsonify("Success"), 200
+    return res
 
 
 @app.route('/api/lists/<list_id>', methods=['GET'])
@@ -207,4 +203,4 @@ def delete_list(list_id):
 if __name__ == '__main__':
     database.create_db()
     database.update_db()
-    app.run(debug=True, port=8000, host='0.0.0.0')
+    # app.run(debug=True, port=8000, host='0.0.0.0')

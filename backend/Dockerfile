@@ -9,5 +9,4 @@ WORKDIR /site
 
 EXPOSE 8000
 
-ENTRYPOINT ["python"]
-CMD ["./main.py"]
+ENTRYPOINT ["sh", "-c", "python main.py & gunicorn -w 1 -b 0.0.0.0:8000 --log-level debug main:app"]
