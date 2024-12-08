@@ -197,6 +197,7 @@ const MapComponent: React.FC = () => {
             stopId,
           }
         );
+        tries = 10;
 
         if (currentUser) fetchUserLists(currentUser);
       } catch (error) {

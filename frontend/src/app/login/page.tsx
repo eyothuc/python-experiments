@@ -17,57 +17,62 @@ const LoginPage = () => {
 
     try {
       const response = await loginUser(username, password, isRemember);
-
-      // Сохраняем пользователя в localStorage
       localStorage.setItem("currentUser", username);
-
-      console.log(response);
-
       setMessage("Успешный вход");
-      router.push("/"); // Переход на страницу с картой
-    } catch (error) {
-      setMessage("Ошибка сохранения куков.");
-      console.error("Ошибка:", error);
+      router.push("/"); // Переход на главную страницу
+    } catch (error: any) {
+      setMessage(error.message);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
+    <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-6 rounded shadow-md max-w-sm w-full"
+        className="bg-white p-8 rounded-xl shadow-lg max-w-sm w-full text-gray-800"
       >
-        <h2 className="text-xl font-bold mb-4">Вход</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Вход</h2>
         <input
           type="text"
           placeholder="Имя пользователя"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="password"
           placeholder="Пароль"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="flex items-center mb-4">
+        <div className="flex items-center mb-6">
           <input
             type="checkbox"
             checked={isRemember}
             onChange={(e) => setIsRemember(e.target.checked)}
             className="mr-2"
           />
-          <label>Запомнить меня</label>
+          <label className="text-sm">Запомнить меня</label>
         </div>
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition"
         >
           Войти
         </button>
-        {message && <p className="text-center text-red-500 mt-4">{message}</p>}
+        {message && (
+          <p className="text-center text-red-500 mt-4 text-sm">{message}</p>
+        )}
+        <p className="text-center text-sm mt-6">
+          Нет аккаунта?{" "}
+          <a
+            href="/register"
+            className="text-blue-500 hover:underline hover:text-blue-700"
+          >
+            Зарегистрируйтесь
+          </a>
+        </p>
       </form>
     </div>
   );

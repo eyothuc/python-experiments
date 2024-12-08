@@ -8,49 +8,61 @@ const RegisterPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const router = useRouter()
+  const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      const result = await registerUser(username, password);
-      
-      
-      setMessage(result);
+      const message = await registerUser(username, password);
+      console.log("Успешная регистрация:", message);
+      setMessage(message); // Показываем сообщение об успехе
+      router.push("/login"); // Перенаправляем на страницу логина
     } catch (error: any) {
-      setMessage(error.message);
+      console.error("Ошибка регистрации:", error);
+      setMessage(error.message); // Показываем сообщение об ошибке
     }
-    router.push("/")
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
+    <div className="flex justify-center items-center h-screen bg-gradient-to-br from-green-500 to-teal-600 text-white">
       <form
         onSubmit={handleRegister}
-        className="bg-white p-6 rounded shadow-md max-w-sm w-full"
+        className="bg-white p-8 rounded-xl shadow-lg max-w-sm w-full text-gray-800"
       >
-        <h2 className="text-xl font-bold mb-4">Регистрация</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Регистрация</h2>
         <input
           type="text"
           placeholder="Имя пользователя"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <input
           type="password"
           placeholder="Пароль"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+          className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition"
         >
           Зарегистрироваться
         </button>
-        {message && <p className="text-center text-red-500 mt-4">{message}</p>}
+        {message && (
+          <p className="text-center text-red-500 mt-4 text-sm">{message}</p>
+        )}
+        <p className="text-center text-sm mt-6">
+          Уже есть аккаунт?{" "}
+          <a
+            href="/login"
+            className="text-green-500 hover:underline hover:text-green-700"
+          >
+            Войдите
+          </a>
+        </p>
       </form>
     </div>
   );
