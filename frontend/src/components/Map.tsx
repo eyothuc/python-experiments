@@ -265,8 +265,15 @@ const MapComponent: React.FC = () => {
   // Создание кастомной иконки
   const createCustomMarker = (type: string) => {
     const iconElement = <TbBusStop size={32} color="white" />;
+    let colorClass = "bg-blue-500";
+
+    if (type === "trolley") {
+      colorClass = "bg-green-500";
+    } else if (type === "tram") {
+      colorClass = "bg-red-500";
+    }
     return L.divIcon({
-      className: `bg-${type === "bus" ? "blue" : "green"}-500 rounded-md`,
+      className: `${colorClass} rounded-md`,
       html: ReactDOMServer.renderToString(iconElement),
       iconSize: [30, 30],
       iconAnchor: [15, 30],
@@ -491,7 +498,9 @@ const MapComponent: React.FC = () => {
                                     <div key={t.route_id}>{`${
                                       stop.transport_type === "bus"
                                         ? "Автобус"
-                                        : "Троллейбус"
+                                        : stop.transport_type === "trolley"
+                                        ? "Троллейбус"
+                                        : "Трамвай"
                                     } ${
                                       t.route_short_name
                                     } - ${calculateArrivalTime(
