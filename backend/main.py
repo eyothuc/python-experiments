@@ -107,11 +107,11 @@ def getStopInfo(stop_id):
     return jsonify(stop_info)
 
 
-@app.route('/api/vehicle/<vehicle_ids>', methods=['GET'])
-def getVehicletripsInfo(vehicle_ids):
-    vehicle_info = gtfs_handlers.get_vehicle_realtime_info(vehicle_ids)
-    gtfs_handlers.get_position_realtime_info()
-    return jsonify(vehicle_info)
+# @app.route('/api/vehicle/<vehicle_ids>', methods=['GET'])
+# def getVehicletripsInfo(vehicle_ids):
+#     vehicle_info = gtfs_handlers.get_vehicle_realtime_info(vehicle_ids)
+#     gtfs_handlers.get_position_realtime_info()
+#     return jsonify(vehicle_info)
 
 
 @app.route('/api/position', methods=['GET'])
