@@ -22,8 +22,6 @@ services:
     container_name: maps-backend
     networks:
       - maps_network
-    ports:
-      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -36,8 +34,6 @@ services:
     container_name: maps-frontend
     networks:
       - maps_network
-    ports:
-      - "3000:3000"
     depends_on:
       backend:
         condition: service_started
