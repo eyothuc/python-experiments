@@ -161,17 +161,17 @@ def add_list(name, stops_ids, user_id):
 def delete_list(list_id, user_id):
     stops_list = get_list_by_id(list_id)
     if not stops_list:
-        return jsonify("No such list"), 400
+        return "No such list"
     if stops_list.user_id != user_id:
-        return jsonify("Forbidden"), 403
+        return "Forbidden"
     with Session(ENGINE) as session:
         session.query(tables.stop_to_list_table).filter(
             Column("stoplists") == list_id).delete()
         for stop in stops_list.stops:
             stops_list.stops.remove(stop)
-        session.delete(stops_list)
+        session.query(tables.StopList).filter(
+            tables.StopList.list_id == list_id).delete()
         session.commit()
-        return jsonify('Success'), 200
 
 
 def add_stops_to_list(user_id, list_id, stop_id):

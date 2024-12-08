@@ -17,6 +17,7 @@ import {
   useMapEvent,
 } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
+import { BiTrash } from "react-icons/bi";
 
 interface Stop {
   id: number;
@@ -45,10 +46,20 @@ axios.defaults.withCredentials = true;
 const MapComponent: React.FC = () => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
   const [locations, setLocations] = useState<
-    { id: number; position: LatLngTuple; text: string }[]
+    {
+      id: number;
+      position: LatLngTuple;
+      text: string;
+      transport_type: string;
+    }[]
   >([]);
   const [showedLocations, setShowedLocations] = useState<
-    { id: number; position: LatLngTuple; text: string }[]
+    {
+      id: number;
+      position: LatLngTuple;
+      text: string;
+      transport_type: string;
+    }[]
   >([]);
   const [selectedStopTransport, setSelectedStopTransport] = useState<
     any[] | null
@@ -63,6 +74,8 @@ const MapComponent: React.FC = () => {
   const [newListName, setNewListName] = useState(""); // Название нового списка
   const [userLists, setUserLists] = useState<any>([]); // Списки пользователя
   const router = useRouter();
+
+  const [filterTime, setFilterTime] = useState<number | null>(null);
 
   // Обновление видимых остановок при перемещении карты
   const MapEventHandler: React.FC = () => {
@@ -106,8 +119,6 @@ const MapComponent: React.FC = () => {
     const now = new Date();
     const diffInMs = arrivalDate - now.getTime(); // Вычисляем разницу в миллисекундах
 
-    console.log(diffInMs, now.getTime(), arrivalDate);
-
     if (diffInMs <= 0) return "Уже прибыл";
 
     const diffInMinutes = Math.ceil(diffInMs / (1000 * 60)); // Преобразуем разницу в минуты
@@ -123,7 +134,7 @@ const MapComponent: React.FC = () => {
 
     while (attempts < retryCount && !success) {
       try {
-          console.log(API_URL);
+        console.log(API_URL);
         const response = await axios.get(`${API_URL}/api/stops`, {
           withCredentials: true,
         });
@@ -135,6 +146,7 @@ const MapComponent: React.FC = () => {
             id: stop.id,
             position: [stop.lat, stop.lon] as LatLngTuple,
             text: stop.name,
+            transport_type: stop.transport_type,
           }));
           setLocations(newLocations);
           success = true; // Запрос выполнен успешно
@@ -166,10 +178,30 @@ const MapComponent: React.FC = () => {
   const fetchUserLists = async (username: string) => {
     try {
       const response = await axios.get(`${API_URL}/api/lists`);
-      console.log(response);
+
       setUserLists(response.data);
     } catch (error) {
       console.error("Ошибка при получении списков пользователя:", error);
+    }
+  };
+
+  const deleteList = async (listId: number) => {
+    try {
+      await axios.delete(`${API_URL}/api/lists/${listId}`);
+      const response = await axios.get(`${API_URL}/api/lists`);
+      setUserLists(response.data);
+    } catch (error) {
+      console.error("Ошибка при удалении списка:", error);
+    }
+  };
+
+  const deleteStopFromList = async (listId: number, stopId: number) => {
+    try {
+      await axios.post(`${API_URL}/api/lists/${listId}/remove`, { stopId });
+      const response = await axios.get(`${API_URL}/api/lists`);
+      setUserLists(response.data);
+    } catch (error) {
+      console.error("Ошибка при удалении остановки из списка:", error);
     }
   };
 
@@ -216,7 +248,7 @@ const MapComponent: React.FC = () => {
   // Вызов в useEffect
   useEffect(() => {
     const username = localStorage.getItem("currentUser");
-    console.log(username);
+
     setCurrentUser(localStorage.getItem("currentUser"));
 
     if (username) {
@@ -231,17 +263,17 @@ const MapComponent: React.FC = () => {
   }, []);
 
   // Создание кастомной иконки
-  const createCustomMarker = () => {
+  const createCustomMarker = (type: string) => {
     const iconElement = <TbBusStop size={32} color="white" />;
     return L.divIcon({
-      className: "bg-blue-500 rounded-md",
+      className: `bg-${type === "bus" ? "blue" : "green"}-500 rounded-md`,
       html: ReactDOMServer.renderToString(iconElement),
       iconSize: [30, 30],
       iconAnchor: [15, 30],
     });
   };
 
-  const customIcon = createCustomMarker();
+  const customIcon = (type: string) => createCustomMarker(type);
 
   const toggleListSelection = (id: number) => {
     setCheckedLists((prev) =>
@@ -342,7 +374,6 @@ const MapComponent: React.FC = () => {
           <h4 className="font-bold text-center mb-3">Транспорт на остановке</h4>
           <ul style={{ listStyleType: "none", padding: 0, margin: 0 }}>
             {selectedStopTransport.map((transport) => {
-              console.log(transport);
               return (
                 <li
                   key={transport.vehicle_id}
@@ -360,7 +391,6 @@ const MapComponent: React.FC = () => {
               );
             })}
           </ul>
-
           <button
             onClick={() => setSelectedStopTransport(null)}
             className="mt-3 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
@@ -383,6 +413,18 @@ const MapComponent: React.FC = () => {
 
         <div className="w-full">
           <h3 className="text-lg font-bold mb-2">Списки пользователя:</h3>
+          <div className="mb-3 flex gap-2 items-center">
+            <label htmlFor="filterTime" className="block mb-1">
+              Прибывает до (мин):
+            </label>
+            <input
+              type="number"
+              id="filterTime"
+              value={filterTime || ""}
+              onChange={(e) => setFilterTime(Number(e.target.value))}
+              className="border rounded-md p-1 w-1/3 bg-gray-200"
+            />
+          </div>
           <ul className="grid grid-cols-2 gap-4 w-full">
             {userLists &&
               userLists.map((list: any) => {
@@ -391,36 +433,72 @@ const MapComponent: React.FC = () => {
                     key={list.list_info.id}
                     className="flex flex-col gap-2 items-center w-full border-gray-600 border p-2 rounded-lg bg-zinc-100"
                   >
-                    <div className="flex w-full">
-                      <input
-                        type="checkbox"
-                        checked={checkedLists.includes(list.list_info.id)}
-                        onChange={() => toggleListSelection(list.list_info.id)}
-                        className="mr-2"
-                      />
-                      <span className="font-bold text-xl">
-                        {list.list_info.name}
-                      </span>
+                    <div className="flex w-full justify-between items-center">
+                      <div className="flex">
+                        <input
+                          type="checkbox"
+                          checked={checkedLists.includes(list.list_info.id)}
+                          onChange={() =>
+                            toggleListSelection(list.list_info.id)
+                          }
+                          className="mr-2"
+                        />
+                        <span className="font-bold text-xl">
+                          {list.list_info.name}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => deleteList(list.list_info.id)}
+                        className="bg-gray-200 text-black font-medium text-sm py-1 px-2 rounded-lg hover:bg-red-500"
+                      >
+                        Удалить список
+                      </button>
                     </div>
                     {list.list_info.stops.length > 0 && (
-                      <ul className="w-full flex flex-col mt-2 border-t border-gray-300 pt-2">
+                      <ul className="w-full flex flex-col mt-2 pt-2">
                         {list.list_info.stops.map((stop: any, id: number) => (
                           <li key={stop.id} className="flex flex-col gap-1">
-                            <span className="text-lg border-y border-gray-600 py-2">
-                              {stop.name}
-                            </span>
+                            <div className="flex gap-2 items-center border-y border-gray-600 py-2">
+                              <span className="text-sm font-medium">
+                                {stop.name}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  deleteStopFromList(list.list_info.id, stop.id)
+                                }
+                                className="bg-gray-200 text-black p-1 rounded-lg hover:bg-red-500"
+                              >
+                                <BiTrash size={20} />
+                              </button>
+                            </div>
                             <div className="flex flex-col text-sm gap-1 my-2">
-                              {list.stops[id].map((t: any) => {
-                                return (
-                                  <div key={t.route_id}>{`${
-                                    stop.transport_type === "bus"
-                                      ? "Автобус"
-                                      : "Троллейбус"
-                                  } ${
-                                    t.route_short_name
-                                  } - ${calculateArrivalTime(t.arrival)}`}</div>
-                                );
-                              })}
+                              {list.stops[id]
+                                .filter((t: any) => {
+                                  if (!filterTime) return true;
+                                  const arrivalDate = t.arrival * 1000; // Преобразуем время в секундах в миллисекунды
+                                  const now = new Date();
+                                  const diffInMs = arrivalDate - now.getTime();
+                                  const diffInMinutes = Math.ceil(
+                                    diffInMs / (1000 * 60)
+                                  ); // Преобразуем разницу в минуты
+
+                                  const minutes = diffInMinutes % 60; // Вычисляем количество минут
+
+                                  return minutes <= filterTime;
+                                })
+                                .map((t: any) => {
+                                  return (
+                                    <div key={t.route_id}>{`${
+                                      stop.transport_type === "bus"
+                                        ? "Автобус"
+                                        : "Троллейбус"
+                                    } ${
+                                      t.route_short_name
+                                    } - ${calculateArrivalTime(
+                                      t.arrival
+                                    )}`}</div>
+                                  );
+                                })}
                             </div>
                           </li>
                         ))}
@@ -486,9 +564,9 @@ const MapComponent: React.FC = () => {
             <Marker
               key={location.id}
               position={location.position}
-              icon={customIcon}
+              icon={customIcon(location.transport_type)}
               eventHandlers={{
-                click: () => handleMarkerClick(location.id), // Обработчик клика на маркере
+                click: () => handleMarkerClick(location.id),
               }}
             >
               <Popup>
@@ -524,7 +602,7 @@ const MapComponent: React.FC = () => {
                     </button>
                     <button
                       className="mt-2 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 w-full"
-                      onClick={() => addToList(location.id)} // Кнопка добавления в список
+                      onClick={() => addToList(location.id)}
                     >
                       Добавить в список
                     </button>
